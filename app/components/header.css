@@ -1,0 +1,16 @@
+#header {
+  width: 100%;
+  overflow: hidden;
+}
+
+#header .section {
+  float: left;
+  display: inline;
+  width: 10em;
+  margin: 0px 8px;
+}
+
+#open-tournament-section {
+  /* This is for the positioning of the dropdown */
+  position: absolute;
+}

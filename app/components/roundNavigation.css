@@ -1,0 +1,32 @@
+#round-nav {
+  padding: 0px 24px;
+  margin: 12px;
+  border-radius: var(--border-radius);
+  background: var(--color-subtle);
+  display: flex;
+  gap: 0;
+  justify-content: space-between;
+}
+
+#round-nav div {
+  padding: 12px;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size);
+}
+
+#round-nav div:not(.inactive) {
+  cursor: pointer;
+}
+
+#round-nav div:hover:not(.inactive) {
+  background: var(--color-subtle-highlight);
+}
+
+.nav-round.future-round {
+  color: var(--color-light);
+}
+
+.nav-round.focus {
+  border: 2px solid var(--color-action);
+  font-weight: bold;
+}

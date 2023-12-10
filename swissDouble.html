@@ -1,0 +1,1126 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+
+    <title>Schweizer Doppel</title>
+    <style>:root {
+  --color-action: #007bff;
+  --color-ok: #cdffdd;
+  --color-alert: red;
+  --color-green: #28a745;
+  --color-yellow: #ffc107;
+  --color-white: #f8f9fa;
+  --color-black: #343a40;
+  --color-subtle: #eee;
+  --color-subtle-highlight: #d0d8fe;
+  --color-light: #aaa;
+  --color-light-transparent: #aaaaaabb;
+  --color-light: #aaa;
+  --font: sans-serif;
+  --font-size: 20px;
+  --max-width: 900px;
+
+  --border-radius: 8px;
+}
+
+#universe {
+  max-width: var(--max-width);
+  margin: auto;
+  font-family: var(--font);
+}
+
+.flex {
+  display: flex;
+  gap: 12px;
+}
+
+.relative {
+  position: relative;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.flex-section {
+  flex: 1 1 0px;
+  width: 0;
+}
+
+.width-100 {
+  width: 100%;
+}
+
+.center {
+  /* needs to be wrapped in a .flex div to take effect */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.right {
+  /* needs to be wrapped in a .flex div to take effect */
+  margin-left: auto;
+}
+
+.btn {
+  font-size: 20px;
+  border: 1px solid black;
+  border-radius: var(--border-radius);
+  padding: 12px;
+}
+
+.btn-action {
+  margin-top: 12px;
+  background: var(--color-action);
+  color: var(--color-white);
+  font-weight: bold;
+  border: None;
+}
+
+.btn-green {
+  background: var(--color-green);
+  color: var(--color-white);
+}
+
+.btn-yellow {
+  background: var(--color-yellow);
+  color: var(--color-black);
+}
+
+h1,
+h2 {
+  font-weight: normal;
+  margin: 0px 0px 6px 0px;
+  padding: 0;
+}
+
+.border {
+  border: 4px double black;
+  border-radius: var(--border-radius);
+}
+
+.page {
+  padding: 12px;
+  margin: 12px;
+}
+#round-view .match {
+  margin-bottom: 8px;
+  padding: 4px 0px;
+  background: var(--color-subtle);
+  font-size: var(--font-size);
+  border-radius: var(--border-radius);
+  display: flex;
+  justify-content: space-evenly;
+}
+
+#round-view .match .team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#round-view .match .result {
+  display: flex;
+  gap: 6px;
+  font-size: var(--font-size);
+  width: 4em;
+}
+
+#round-view .match .result .conjunctor {
+  margin: auto;
+}
+
+#round-view .match:has(.result .set),
+#round-view .match.freegame {
+  background: var(--color-ok);
+}
+
+#round-view.past-round .match,
+#round-view.past-round .match .result .btn-result {
+  background: var(--color-subtle) !important;
+  color: var(--color-light) !important;
+}
+
+#round-view.past-round h2 {
+  color: var(--color-light) !important;
+}
+
+#round-view .btn-result {
+  background: white;
+  border: None;
+  width: calc(var(--font-size) + 24px);
+  margin: auto 0;
+  vertical-align: middle;
+}
+#round-nav {
+  padding: 0px 24px;
+  margin: 12px;
+  border-radius: var(--border-radius);
+  background: var(--color-subtle);
+  display: flex;
+  gap: 0;
+  justify-content: space-between;
+}
+
+#round-nav div {
+  padding: 12px;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size);
+}
+
+#round-nav div:not(.inactive) {
+  cursor: pointer;
+}
+
+#round-nav div:hover:not(.inactive) {
+  background: var(--color-subtle-highlight);
+}
+
+.nav-round.future-round {
+  color: var(--color-light);
+}
+
+.nav-round.focus {
+  border: 2px solid var(--color-action);
+  font-weight: bold;
+}
+#ranking-table table.result-table {
+  margin-top: 24px;
+  width: 100%;
+}
+
+#ranking-table th {
+  text-align: left;
+  font-weight: bold;
+}
+
+#ranking-table tr:nth-child(even) {
+  background: var(--color-subtle);
+}
+#open-dialog {
+  position: relative;
+  display: inline-block;
+  background: var(--color-white);
+  border: 2px solid var(--color-black);
+  border-radius: var(--border-radius);
+  width: 30em;
+  top: 4px;
+  box-shadow: 10px 5px 5px var(--color-white);
+}
+
+#open-dialog .dropdown {
+  position: absolute;
+  display: inline-block;
+  z-index: 1;
+}
+
+#open-dialog .dropdown-dialog-row:not(last-child) {
+  display: block;
+  background: var(--color-white);
+  padding: 12px;
+  font-size: var(--font-size);
+  border-bottom: 1px solid var(--color-black);
+}
+
+#open-dialog .dropdown-dialog-row:hover {
+  background: var(--color-subtle-highlight);
+}
+#header {
+  width: 100%;
+  overflow: hidden;
+}
+
+#header .section {
+  float: left;
+  display: inline;
+  width: 10em;
+  margin: 0px 8px;
+}
+
+#open-tournament-section {
+  /* This is for the positioning of the dropdown */
+  position: absolute;
+}
+#data-form .input {
+  width: 100%;
+  font-size: var(--font-size);
+}
+
+#data-form .label {
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-size: var(--font-size);
+  font-weight: bold;
+}
+
+#data-form #input-participants {
+  width: 100%;
+}
+.alert {
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  background: var(--color-light-transparent);
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: var(--font-size);
+  display: flex;
+}
+
+.alert-body {
+  margin: auto;
+  background: var(--color-white);
+  border-radius: var(--border-radius);
+  padding: 20px;
+}
+
+.alert-message {
+  white-space: pre-line;
+  padding: 20px;
+}
+
+.alert-body button {
+  min-width: 5em;
+}
+</style>
+    <script>/*************************
+ *        GENERAL        *
+ ************************/
+
+const setDiff = (these, those) =>
+  new Set([...these].filter((element) => !those.has(element)))
+
+const drawRandom = (set) => {
+  let array = Array.from(set)
+  return array[Math.floor(Math.random() * array.length)]
+}
+
+const findDuplicates = (array) =>
+  array.filter((item, index) => array.indexOf(item) !== index)
+
+const shuffle = (array) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
+  }
+  return array
+}
+
+const isTruthy = (value) => {
+  // a more pythonic implementation of truthyness, regarding empty collections
+  // as falsy
+  try {
+    return !!value.length
+  } catch {}
+  try {
+    return !!Object.keys(value).length
+  } catch {}
+  try {
+    return !!value.size
+  } catch {}
+  return !!value
+}
+
+const randomId = () => Math.random().toString(36).replace(/^0\./, '_')
+
+/*************************
+ *   KEY-VALUE-STORAGE   *
+ ************************/
+
+const ROOT = 'swiss-double'
+const getStoreValue = () => JSON.parse(localStorage.getItem(ROOT)) || {}
+const setStoreValue = (value) =>
+  localStorage.setItem(ROOT, JSON.stringify(value))
+
+const load = (key) => getStoreValue()[key]
+const dump = (key, value) => {
+  let storeValue = getStoreValue()
+  storeValue[key] = value
+  setStoreValue(storeValue)
+}
+
+const erase = (key) => {
+  let store = getStoreValue()
+  delete store[key]
+  setStoreValue(store)
+}
+
+/*************************
+ *    DOM INTERACTION    *
+ ************************/
+
+const domRead = (id) => document.getElementById(id).value
+const domWrite = (id, value) => {
+  document.getElementById(id).value = value
+  return true
+}
+
+const domFromHTML = (html) => {
+  html = html.trim()
+
+  const template = document.createElement('template')
+  template.innerHTML = html
+  const result = template.content.children
+
+  if (result.length == 1) return result[0]
+  return result
+}
+/*************************
+ *      CALCULATIONS     *
+ ************************/
+
+// history is an array of rounds.
+// Each round in history is an array of matches.
+// Each regular match has the following structure:
+//
+// {
+//   teams: [["Player1", "Player2"], ["Player3", "Player4"]],
+//   winningTeam: 0,
+// }
+//
+// where the value of winningTeam indicates the index of the winning team in
+// teams field.
+// matches representing freegames have the following structure:
+//
+// {
+//   isFreeGame: true,
+//   player: "Player1",
+// }
+//
+
+const tournamentHasStarted = (history) => isTruthy(history)
+
+const drawSetting = (participants) => shuffle(participants)
+
+const tournamentHasFinished = (history, roundCount) => {
+  return history.length == roundCount && !roundIsOpen(history[roundCount - 1])
+}
+
+const roundIsOpen = (round) => round.some((match) => match.winningTeam === null)
+
+const calculateCurrentRound = () => {
+  // which round is current round
+  const history = load('history')
+  for (const [index, round] of history.entries()) {
+    if (roundIsOpen(round)) {
+      return index + 1
+    }
+  }
+  return history.length
+}
+
+const setWinner = (resultOneElement, resultTwoElement) => {
+  resultOneElement.innerHTML = 1
+  resultTwoElement.innerHTML = 0
+  resultOneElement.classList.add('set')
+  resultTwoElement.classList.add('set')
+}
+
+const determineNextRound = (participants, history) => {
+  const ranking = calculateRanking(participants, history)
+  const rankingObject = Object.fromEntries(ranking)
+  const forbiddenPairings = calculateForbiddenPairings(participants, history)
+  const freeGamers = calculateFreeGamers(participants, history)
+  const pairings = drawPairings(
+    participants,
+    forbiddenPairings,
+    freeGamers
+  ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
+  let matches = []
+  for (let i = 0; i < pairings.length; i += 2) {
+    matches.push({
+      teams: [pairings[i], pairings[i + 1]],
+      winningTeam: null,
+    })
+  }
+
+  for (const freeGamer of freeGamers) {
+    matches.push({
+      isFreeGame: true,
+      player: freeGamer,
+    })
+  }
+  return matches
+}
+
+const calculateForbiddenPairings = (participants, history) => {
+  let forbiddenPartners = {}
+  for (const participant of participants) {
+    forbiddenPartners[participant] = new Set([participant])
+  }
+  for (const round of history) {
+    for (const match of round) {
+      if (match.isFreeGame) {
+        continue
+      }
+      for (const team of match.teams) {
+        forbiddenPartners[team[0]].add(team[1])
+        forbiddenPartners[team[1]].add(team[0])
+      }
+    }
+  }
+  return forbiddenPartners
+}
+
+const drawPairings = (participants, forbiddenPairings, freeGamers) => {
+  participants = new Set(participants)
+  const players = setDiff(participants, freeGamers)
+  let pairings = []
+  while (players.size > 0) {
+    const [playerOne] = players
+    players.delete(playerOne)
+    const possiblePartners = setDiff(players, forbiddenPairings[playerOne])
+    if (possiblePartners.size == 0) {
+      // No possible solution with the current drawing, try again from scratch
+      return drawPairings(participants, forbiddenPairings, freeGamers)
+    }
+    const playerTwo = drawRandom(possiblePartners)
+    players.delete(playerTwo)
+    pairings.push([playerOne, playerTwo])
+  }
+  return pairings
+}
+
+const calculateFreeGamers = (participants, history) => {
+  // Participants with the lowest ranking who have not yet had a free game will
+  // get a free game.
+  let ranking = calculateRanking(participants, history)
+  const participantCount = participants.length
+  const freeGamesCount = participantCount % 4
+  let freeGamers = new Set([])
+  if (freeGamesCount == 0) {
+    return freeGamers
+  }
+  for (const [player, _] of ranking.reverse()) {
+    if (!playerHadFreeGame(player, history)) {
+      freeGamers.add(player)
+    }
+    if (freeGamers.size == freeGamesCount) {
+      return freeGamers
+    }
+  }
+  return freeGamers
+}
+
+const playerHadFreeGame = (player, history) => {
+  for (const round of history) {
+    for (const match of round) {
+      if (!match.isFreeGame) {
+        continue
+      }
+      if (match.player == player) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+const calculatePoints = (participants, history) => {
+  // Returns sorted array of tuple [player, points] buchholz, 2nd-buchholz]
+  let ranking = {}
+  for (const participant of participants) {
+    ranking[participant] = 0
+  }
+  for (const round of history) {
+    if (roundIsOpen(round)) {
+      continue
+    }
+    for (const match of round) {
+      if (match.isFreeGame) {
+        ranking[match.player] += 1
+        continue
+      }
+      for (const winningPlayer of match.teams[match.winningTeam]) {
+        ranking[winningPlayer] += 1
+      }
+    }
+  }
+  return ranking
+}
+
+const calculateBuchholz = (points, history) => {
+  const buchholz = {}
+  for (const player of Object.keys(points)) {
+    buchholz[player] = 0
+  }
+
+  for (const round of history) {
+    if (roundIsOpen(round)) {
+      continue
+    }
+    for (const match of round) {
+      if (match.isFreeGame) {
+        continue
+      }
+      const teams = match.teams
+      /* Subtracting points of partner */
+      buchholz[teams[0][0]] -= points[teams[0][1]]
+      buchholz[teams[0][1]] -= points[teams[0][0]]
+      buchholz[teams[1][0]] -= points[teams[1][1]]
+      buchholz[teams[1][1]] -= points[teams[1][0]]
+
+      /* Adding points of opponents */
+      buchholz[teams[0][0]] += points[teams[1][0]] + points[teams[1][1]]
+      buchholz[teams[0][1]] += points[teams[1][0]] + points[teams[1][1]]
+      buchholz[teams[1][0]] += points[teams[0][0]] + points[teams[0][1]]
+      buchholz[teams[1][1]] += points[teams[0][0]] + points[teams[0][1]]
+    }
+  }
+  return buchholz
+}
+
+const calculateRanking = (participants, history) => {
+  // Returns sorted array of tuples [player, points, buchholz]
+  let points = calculatePoints(participants, history)
+  let buchholz = calculateBuchholz(points, history)
+  let ranking = participants.map((participant) => [
+    participant,
+    points[participant],
+    buchholz[participant],
+  ])
+  return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2])
+}
+
+const setNextRound = (history, setting, roundCount) => {
+  if (calculateCurrentRound() == roundCount) return
+  dump('history', [...history, determineNextRound(setting, history)])
+}
+
+/* Exporting functions for testing */
+if (typeof exports !== 'undefined') {
+  exports.calculateRanking = calculateRanking
+  exports.calculatePoints = calculatePoints
+  exports.calculateBuchholz = calculateBuchholz
+  exports.tournamentHasStarted = tournamentHasStarted
+  exports.playerHadFreeGame = playerHadFreeGame
+  exports.calculateFreeGamers = calculateFreeGamers
+}
+window.onload = () => render()
+
+const render = () => {
+  destroyRoundNavigation()
+  destroyRoundView()
+
+  const participants = load('participants') || []
+  const history = load('history') || []
+  const roundCount = load('roundCount')
+  const title = load('title')
+
+  createHeader()
+
+  if (tournamentHasStarted(history)) {
+    const setting = load('setting') || []
+
+    createRankingTable(setting, history)
+    createRoundNavigation(roundCount)
+    createRoundView(calculateCurrentRound())
+    return
+  }
+
+  createDataForm()
+  dump('history', [])
+
+  title && domWrite('input-title', load('title'))
+  participants &&
+    domWrite('input-participants', participants.join('\n')) &&
+    onParticipantInputChange()
+  roundCount &&
+    domWrite('input-round-count', roundCount) &&
+    createRoundNavigation(roundCount)
+}
+
+const startTournament = () => {
+  const history = load('history') || []
+
+  if (tournamentHasStarted(history)) return
+
+  const participants = readParticipants()
+  const duplicates = findDuplicates(participants)
+  if (isTruthy(duplicates)) {
+    createAlert(`
+      Die folgenden Einträge tauchen doppelt auf:
+
+          ${duplicates.join('\n')}
+
+      Bitte ändere die Einträge, um sie zu vereindeutigen.
+    `)
+    return
+  }
+
+  const setting = drawSetting(participants)
+  const roundCount = readRoundCount()
+  dump('participants', participants)
+  dump('setting', setting)
+  dump('roundCount', roundCount)
+  dump('title', readTitle())
+  dump('history', history)
+
+  setNextRound(history, setting, roundCount)
+  render()
+}
+
+const createTournament = () => {
+  storeTournament()
+  erase('history')
+  erase('title')
+  erase('participants')
+  erase('setting')
+  erase('roundCount')
+  render()
+}
+
+const storeTournament = () => {
+  const history = load('history')
+  if (!tournamentHasStarted(history)) {
+    return
+  }
+  const title = load('title')
+  const tournament = {
+    title: title,
+    history: load('history'),
+    participants: load('participants'),
+    setting: load('setting'),
+    roundCount: load('roundCount'),
+  }
+  let storeValue = load('savedTournaments') || {}
+  storeValue[title] = tournament
+  dump('savedTournaments', storeValue)
+}
+
+const openTournament = (key) => {
+  storeTournament()
+
+  const tournament = load('savedTournaments')[key]
+  dump('history', tournament.history)
+  dump('participants', tournament.participants)
+  dump('roundCount', tournament.roundCount)
+  dump('setting', tournament.setting)
+  dump('title', tournament.title)
+  render()
+}
+const createFreeGameDom = (match) =>
+  domFromHTML(`
+  <div class="match freegame flex">
+    <div class="team">FREISPIEL</div>
+    <div class="team">${match.player}</div>
+  </div>
+`)
+
+const createRegularMatchDom = (match, openRound) => {
+  const teamOne = domFromHTML(`
+    <div class="team">
+      <div class="player">${match.teams[0][0]}</div>
+      <div class="player">${match.teams[0][1]}</div>
+    </div>
+  `)
+  const teamTwo = domFromHTML(`
+    <div class="team">
+      <div class="player">${match.teams[1][0]}</div>
+      <div class="player">${match.teams[1][1]}</div>
+    </div>
+  `)
+
+  const resultTeamOne = domFromHTML(`
+    <button class="btn btn-result">${
+      match.winningTeam == 0 ? 1 : match.winningTeam === null ? '?' : 0
+    }</button>
+  `)
+
+  const resultTeamTwo = domFromHTML(`
+    <button class="btn btn-result second">${
+      match.winningTeam == 1 ? 1 : match.winningTeam === null ? '?' : 0
+    }</button>
+  `)
+  if (openRound) {
+    resultTeamOne.addEventListener('click', () => {
+      setWinner(resultTeamOne, resultTeamTwo)
+    })
+    resultTeamTwo.addEventListener('click', () => {
+      setWinner(resultTeamTwo, resultTeamOne)
+    })
+  }
+
+  const result = domFromHTML(`<div class="result"></div>`)
+  const conjunctor = domFromHTML(`<span class="conjunctor">:</span>`)
+
+  result.appendChild(resultTeamOne)
+  result.appendChild(conjunctor)
+  result.appendChild(resultTeamTwo)
+
+  const dom = domFromHTML(`<div class="match"></div>`)
+  dom.appendChild(teamOne)
+  dom.appendChild(result)
+  dom.appendChild(teamTwo)
+  return dom
+}
+
+const createRoundView = (focusedRound) => {
+  destroyRoundView()
+  const history = load('history')
+  if (!isTruthy(history)) return
+
+  const roundCount = load('roundCount')
+  const currentRound = calculateCurrentRound()
+  const tournamentIsOver = tournamentHasFinished(history, roundCount)
+
+  const dom = domFromHTML(`<div id="round-view" class="page border"></div>`)
+
+  focusedRound != currentRound || tournamentIsOver
+    ? dom.classList.add('past-round')
+    : dom.classList.add('current-round')
+
+  const round = history[focusedRound - 1]
+
+  let heading = domFromHTML(`
+    <div class="flex"><h2 class="center">Runde ${focusedRound}</h2></div
+  `)
+  let matchDoms = []
+  for (const match of round) {
+    const roundIsOpen = focusedRound == currentRound && !tournamentIsOver
+    match.isFreeGame
+      ? matchDoms.push(createFreeGameDom(match))
+      : matchDoms.push(createRegularMatchDom(match, roundIsOpen))
+  }
+  dom.replaceChildren(heading, ...matchDoms)
+
+  if (focusedRound == calculateCurrentRound() && !tournamentIsOver) {
+    const button = domFromHTML(`
+      <div class="flex">
+        <button
+          id="action-fix-round"
+          class="btn btn-action right"
+        >
+          Runde Festschreiben
+        </button>
+      </div>
+    `)
+    button.addEventListener('click', closeRound)
+    dom.appendChild(button)
+  }
+  document.getElementById('round-nav')?.after(dom)
+  highlightRoundNavItem(focusedRound)
+}
+
+const destroyRoundView = () => document.getElementById('round-view')?.remove()
+
+const closeRound = () => {
+  const history = load('history')
+  const roundCount = load('roundCount')
+  const setting = load('setting')
+
+  const currentRound = calculateCurrentRound()
+  const round = history[currentRound - 1]
+  let index = 0
+  for (const result of document.querySelectorAll(
+    '.match .result .btn-result.second'
+  )) {
+    if (result.innerHTML == '?') {
+      createAlert(`
+        Die Runde kann noch nicht festgeschrieben werden,
+        weil noch Ergebnisse fehlen.
+      `)
+      return
+    }
+    result.innerHTML == '1'
+      ? (round[index].winningTeam = 1)
+      : (round[index].winningTeam = 0)
+    index++
+  }
+
+  history[currentRound - 1] = round
+  dump('history', history)
+  setNextRound(history, setting, roundCount)
+  render()
+}
+const highlightRoundNavItem = (roundNumber) => {
+  let items = document.getElementsByClassName('nav-round')
+  for (let index = 1; index <= items.length; index++) {
+    const item = items[index - 1]
+    item.classList.remove('focus')
+    if (index == roundNumber) {
+      item.classList.add('focus')
+    }
+  }
+}
+
+const createRoundNavigation = (focusedRound) => {
+  const currentRound = calculateCurrentRound()
+  let items = []
+  for (let round = 1; round <= focusedRound; round++) {
+    let navItem = domFromHTML(`
+      <div
+        class="
+        nav-round
+        ${currentRound == round ? 'current-round' : ''}
+        ${currentRound < round ? 'future-round inactive' : ''}
+        "
+      >
+        Runde ${round}
+      </div>
+    `)
+    round <= currentRound &&
+      navItem.addEventListener('click', () => {
+        createRoundView(round)
+      })
+    items.push(navItem)
+  }
+  destroyRoundNavigation()
+  const dom = domFromHTML(`<div id="round-nav"></div>`)
+  dom.replaceChildren(...items)
+  document.getElementById('tournament-data').after(dom)
+}
+
+const destroyRoundNavigation = () =>
+  document.getElementById('round-nav')?.remove()
+const titleDom = (title) =>
+  domFromHTML(`
+    <div class="flex"><h1 class="center">${title}</h1></div>
+  `)
+
+const headingDom = (round, tournamentIsOver) =>
+  tournamentIsOver
+    ? domFromHTML(`<div class=flex><h2 class="center">Endstand</h2></div>`)
+    : domFromHTML(`
+      <div class=flex>
+        <h2 class="center">Zwischenstand nach Runde ${round}</h2>
+      </div>
+    `)
+
+const tableDom = (ranking) => {
+  const dom = domFromHTML(`<table class="result-table"></table>`)
+  const rows = []
+  rows.push(
+    domFromHTML(`
+      <tr>
+        <th>Platz</th>
+        <th>Name</th>
+        <th>Punkte</th>
+        <th>Buchholz</th>
+      </tr>
+    `)
+  )
+  for (const [index, [player, points, buchholz]] of ranking.entries()) {
+    rows.push(
+      domFromHTML(`
+      <tr>
+        <td>${index + 1}</td>
+        <td>${player}</td>
+        <td>${points}</td>
+        <td>${buchholz}</td>
+      </tr>
+    `)
+    )
+  }
+  dom.replaceChildren(...rows)
+  return dom
+}
+
+const createRankingTable = (participants, history) => {
+  if (!participants) return
+
+  const ranking = calculateRanking(participants, history)
+  const title = load('title')
+  const roundCount = load('roundCount')
+  const currentRound = calculateCurrentRound()
+  let rankedRound = 0
+  if (currentRound) {
+    rankedRound = roundIsOpen(history[currentRound - 1])
+      ? currentRound - 1
+      : currentRound
+  }
+
+  const dom = domFromHTML(`<div id="ranking-table"></div>`)
+
+  dom.replaceChildren(
+    titleDom(title),
+    headingDom(rankedRound, tournamentHasFinished(history, roundCount)),
+    tableDom(ranking)
+  )
+  document.getElementById('tournament-data').replaceChildren(dom)
+}
+const createOpenDialog = () => {
+  destroyOpenDialog()
+  const tournaments = Object.keys(load('savedTournaments') || {})
+  if (!isTruthy(tournaments)) {
+    return
+  }
+  const dialog = domFromHTML(`
+    <div id="open-dialog" class="dropdown-dialog"></div>
+  `)
+  for (const tournament of tournaments) {
+    const link = createOpenLink(tournament)
+    dialog.appendChild(link)
+  }
+  const section = document.getElementById('open-tournament-section')
+  section.appendChild(dialog)
+
+  window.addEventListener(
+    'click',
+    (event) =>
+      document
+        .getElementById('open-tournament-section')
+        .contains(event.target) || destroyOpenDialog()
+  )
+}
+
+const destroyOpenDialog = () => document.getElementById('open-dialog')?.remove()
+
+const createOpenLink = (tournamentKey) => {
+  const link = domFromHTML(`
+    <div class="dropdown-dialog-row action-open-tournament">
+      ${tournamentKey}
+    </div>
+  `)
+  link.addEventListener('click', () => {
+    openTournament(tournamentKey)
+    destroyOpenDialog()
+  })
+
+  return link
+}
+const createHeader = () => {
+  const dom = domFromHTML(`
+    <div id="header" class="page">
+
+      <div id="create-tournament-section" class="section">
+        <button
+          id="action-create-tournament"
+          class="btn btn-action btn-green width-100"
+        >
+          Neu
+        </button>
+      </div>
+
+      <div id="open-tournament-section" class="section">
+        <div class="width-100 relative">
+          <div class="dropdown width-100">
+            <button
+              id="action-open-tournament"
+              class="btn btn-action btn-yellow width-100"
+            >
+              Öffnen
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `)
+  document.getElementById('header').replaceWith(dom)
+
+  document
+    .getElementById('action-create-tournament')
+    .addEventListener('click', createTournament)
+
+  document
+    .getElementById('open-tournament-section')
+    .addEventListener('click', createOpenDialog)
+}
+const createDataForm = () => {
+  const dataForm = domFromHTML(`
+    <div id="data-form">
+      <h1>Turnierdaten</h1>
+      <div class="flex">
+        <div class="flex-grow">
+          <div class="label">Name</div>
+          <input id="input-title" class="input" type="text" />
+        </div>
+
+        <div class="right">
+          <div class="label">Runden</div>
+          <input
+            id="input-round-count"
+            class="input"
+            type="number"
+            value="5"
+          />
+        </div>
+      </div>
+
+      <div class="label">Setzung</div>
+      <textarea id="input-participants" rows=8 type="text" class="input"></textarea>
+
+      <div class="flex">
+        <button class="btn btn-action right" id="action-start-tournament">
+          Turnier Starten
+        </button>
+      </div>
+    </div>
+  `)
+  document.getElementById('tournament-data').replaceChildren(dataForm)
+
+  document
+    .getElementById('action-start-tournament')
+    .addEventListener('click', startTournament)
+
+  document
+    .getElementById('input-participants')
+    ?.addEventListener('keyup', (event) => {
+      if (event.key == 'Enter') {
+        onParticipantInputChange()
+      }
+    })
+}
+
+const destroyDataForm = () => document.getElementById('data-form')?.remove()
+
+const onParticipantInputChange = (_event) => {
+  // Adapt textarea size whenever input changes
+  const input = document.getElementById('input-participants')
+  let participants = readParticipants()
+  dump('participants', participants)
+  input.rows = Math.max(input.rows, participants.length + 2)
+}
+
+const readParticipants = () =>
+  domRead('input-participants')
+    .split('\n')
+    .filter((line) => line.trim())
+
+const readTitle = () => domRead('input-title')
+
+const readRoundCount = () => Number(domRead('input-round-count'))
+const createAlert = (message) => {
+  message = message.trim()
+  const id = randomId()
+  const dom = domFromHTML(`
+    <div id=${id} class="alert">
+      <div class="alert-body">
+        <div class="alert-message">
+          ${message}
+        </div>
+
+        <div class="flex">
+          <button
+            id="action-close-alert"
+            class="btn btn-action right"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  `)
+
+  document.getElementById('universe').appendChild(dom)
+  document.getElementById(id).addEventListener('click', () => destroyAlert(id))
+}
+
+const destroyAlert = (id) => {
+  document.getElementById(id).remove()
+}
+</script>
+  </head>
+
+  <body>
+    <div id="universe">
+      <div id="header"></div>
+      <div id="tournament-data" class="page border"></div>
+      <div id="round-nav"></div>
+      <div id="round"></div>
+    </div>
+  </body>
+</html>

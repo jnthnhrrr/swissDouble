@@ -1,0 +1,13 @@
+#ranking-table table.result-table {
+  margin-top: 24px;
+  width: 100%;
+}
+
+#ranking-table th {
+  text-align: left;
+  font-weight: bold;
+}
+
+#ranking-table tr:nth-child(even) {
+  background: var(--color-subtle);
+}

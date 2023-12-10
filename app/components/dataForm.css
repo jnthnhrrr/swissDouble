@@ -1,0 +1,15 @@
+#data-form .input {
+  width: 100%;
+  font-size: var(--font-size);
+}
+
+#data-form .label {
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-size: var(--font-size);
+  font-weight: bold;
+}
+
+#data-form #input-participants {
+  width: 100%;
+}

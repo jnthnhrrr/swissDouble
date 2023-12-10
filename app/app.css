@@ -1,0 +1,100 @@
+:root {
+  --color-action: #007bff;
+  --color-ok: #cdffdd;
+  --color-alert: red;
+  --color-green: #28a745;
+  --color-yellow: #ffc107;
+  --color-white: #f8f9fa;
+  --color-black: #343a40;
+  --color-subtle: #eee;
+  --color-subtle-highlight: #d0d8fe;
+  --color-light: #aaa;
+  --color-light-transparent: #aaaaaabb;
+  --color-light: #aaa;
+  --font: sans-serif;
+  --font-size: 20px;
+  --max-width: 900px;
+
+  --border-radius: 8px;
+}
+
+#universe {
+  max-width: var(--max-width);
+  margin: auto;
+  font-family: var(--font);
+}
+
+.flex {
+  display: flex;
+  gap: 12px;
+}
+
+.relative {
+  position: relative;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.flex-section {
+  flex: 1 1 0px;
+  width: 0;
+}
+
+.width-100 {
+  width: 100%;
+}
+
+.center {
+  /* needs to be wrapped in a .flex div to take effect */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.right {
+  /* needs to be wrapped in a .flex div to take effect */
+  margin-left: auto;
+}
+
+.btn {
+  font-size: 20px;
+  border: 1px solid black;
+  border-radius: var(--border-radius);
+  padding: 12px;
+}
+
+.btn-action {
+  margin-top: 12px;
+  background: var(--color-action);
+  color: var(--color-white);
+  font-weight: bold;
+  border: None;
+}
+
+.btn-green {
+  background: var(--color-green);
+  color: var(--color-white);
+}
+
+.btn-yellow {
+  background: var(--color-yellow);
+  color: var(--color-black);
+}
+
+h1,
+h2 {
+  font-weight: normal;
+  margin: 0px 0px 6px 0px;
+  padding: 0;
+}
+
+.border {
+  border: 4px double black;
+  border-radius: var(--border-radius);
+}
+
+.page {
+  padding: 12px;
+  margin: 12px;
+}

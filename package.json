@@ -1,0 +1,17 @@
+{
+  "name": "swiss-double",
+  "version": "0.1.0",
+  "description": "Swiss-System Style Tournament Software for Teams of Two Players",
+  "scripts": {
+    "test": "mocha --reporter spec",
+    "format": "prettier app --no-semi --write",
+    "build": "node build.js"
+  },
+  "author": "Jonathan Scholbach",
+  "license": "MIT",
+  "dependencies": {
+    "chai": "^4.3.10",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0"
+  }
+}
