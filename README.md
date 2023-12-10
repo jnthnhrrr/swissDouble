@@ -1,5 +1,6 @@
 This is an application for running tournaments in sports where teams consist of
-two players. Teams are not fixed, but assigned randomly at new every round.
+two players. Team partners are not fixed throughout the tournament, but are
+assigned at random every new round.
 
 It is inspired by the Swiss System most prominently used in chess, but does not
 follow it to the letter. The general idea is that the tournament has no
