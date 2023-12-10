@@ -74,9 +74,8 @@ const createTournament = () => {
 
 const storeTournament = () => {
   const history = load('history')
-  if (!tournamentHasStarted(history)) {
-    return
-  }
+  if (!tournamentHasStarted(history)) return
+
   const title = load('title')
   const tournament = {
     title: title,
@@ -90,10 +89,10 @@ const storeTournament = () => {
   dump('savedTournaments', storeValue)
 }
 
-const openTournament = (key) => {
+const openTournament = (title) => {
   storeTournament()
 
-  const tournament = load('savedTournaments')[key]
+  const tournament = load('savedTournaments')[title]
   dump('history', tournament.history)
   dump('participants', tournament.participants)
   dump('roundCount', tournament.roundCount)

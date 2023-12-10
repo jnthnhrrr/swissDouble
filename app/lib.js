@@ -42,13 +42,6 @@ const calculateCurrentRound = () => {
   return history.length
 }
 
-const setWinner = (resultOneElement, resultTwoElement) => {
-  resultOneElement.innerHTML = 1
-  resultTwoElement.innerHTML = 0
-  resultOneElement.classList.add('set')
-  resultTwoElement.classList.add('set')
-}
-
 const determineNextRound = (participants, history) => {
   const ranking = calculateRanking(participants, history)
   const rankingObject = Object.fromEntries(ranking)

@@ -1,12 +1,50 @@
-const createFreeGameDom = (match) =>
+const freeGameDom = (match) =>
   domFromHTML(`
-  <div class="match freegame flex">
-    <div class="team">FREISPIEL</div>
-    <div class="team">${match.player}</div>
-  </div>
-`)
+    <div class="match freegame flex">
+      <div class="team">FREISPIEL</div>
+      <div class="team">${match.player}</div>
+    </div>
+  `)
 
-const createRegularMatchDom = (match, openRound) => {
+const resultDom = (match, changeable) => {
+  const dom = domFromHTML(`<div class="result"></div>`)
+
+  const teamOneResultDom = domFromHTML(`
+    <button class="btn btn-result">${
+      match.winningTeam == 0 ? 1 : match.winningTeam === null ? '?' : 0
+    }</button>
+  `)
+
+  const teamTwoResultDom = domFromHTML(`
+    <button class="btn btn-result second">${
+      match.winningTeam == 1 ? 1 : match.winningTeam === null ? '?' : 0
+    }</button>
+  `)
+
+  if (changeable) {
+    teamOneResultDom.addEventListener('click', () => {
+      setWinner(teamOneResultDom, teamTwoResultDom)
+    })
+    teamTwoResultDom.addEventListener('click', () => {
+      setWinner(teamTwoResultDom, teamOneResultDom)
+    })
+  }
+
+  dom.appendChild(teamOneResultDom)
+  dom.appendChild(domFromHTML(`<span class="conjunctor">:</span>`))
+  dom.appendChild(teamTwoResultDom)
+
+  return dom
+}
+
+const setWinner = (thisDom, thatDom) => {
+  thisDom.innerHTML = 1
+  thatDom.innerHTML = 0
+  thisDom.classList.add('set')
+  thatDom.classList.add('set')
+}
+
+const regularMatchDom = (match, openRound) => {
   const teamOne = domFromHTML(`
     <div class="team">
       <div class="player">${match.teams[0][0]}</div>
@@ -20,34 +58,10 @@ const createRegularMatchDom = (match, openRound) => {
     </div>
   `)
 
-  const resultTeamOne = domFromHTML(`
-    <button class="btn btn-result">${
-      match.winningTeam == 0 ? 1 : match.winningTeam === null ? '?' : 0
-    }</button>
-  `)
-
-  const resultTeamTwo = domFromHTML(`
-    <button class="btn btn-result second">${
-      match.winningTeam == 1 ? 1 : match.winningTeam === null ? '?' : 0
-    }</button>
-  `)
-  if (openRound) {
-    resultTeamOne.addEventListener('click', () => {
-      setWinner(resultTeamOne, resultTeamTwo)
-    })
-    resultTeamTwo.addEventListener('click', () => {
-      setWinner(resultTeamTwo, resultTeamOne)
-    })
-  }
-
-  const result = domFromHTML(`<div class="result"></div>`)
-  const conjunctor = domFromHTML(`<span class="conjunctor">:</span>`)
-
-  result.appendChild(resultTeamOne)
-  result.appendChild(conjunctor)
-  result.appendChild(resultTeamTwo)
+  const result = resultDom(match, openRound)
 
   const dom = domFromHTML(`<div class="match"></div>`)
+
   dom.appendChild(teamOne)
   dom.appendChild(result)
   dom.appendChild(teamTwo)
@@ -78,8 +92,8 @@ const createRoundView = (focusedRound) => {
   for (const match of round) {
     const roundIsOpen = focusedRound == currentRound && !tournamentIsOver
     match.isFreeGame
-      ? matchDoms.push(createFreeGameDom(match))
-      : matchDoms.push(createRegularMatchDom(match, roundIsOpen))
+      ? matchDoms.push(freeGameDom(match))
+      : matchDoms.push(regularMatchDom(match, roundIsOpen))
   }
   dom.replaceChildren(heading, ...matchDoms)
 
