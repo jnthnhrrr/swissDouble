@@ -2,6 +2,7 @@
   --color-action: #007bff;
   --color-ok: #cdffdd;
   --color-alert: #dc143c;
+  --color-alert-transparent: #dc143c77;
   --color-green: #28a745;
   --color-yellow: #ffc107;
   --color-white: #f8f9fa;
@@ -59,7 +60,7 @@
 
 .btn {
   font-size: 20px;
-  border: 1px solid black;
+  border: None;
   border-radius: var(--border-radius);
   padding: 12px;
 }

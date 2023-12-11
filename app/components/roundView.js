@@ -98,7 +98,7 @@ const createRoundView = (focusedRound) => {
   dom.replaceChildren(heading, ...matchDoms)
 
   if (focusedRound == calculateCurrentRound() && !tournamentIsOver) {
-    const button = domFromHTML(`
+    const closeButton = domFromHTML(`
       <div class="flex">
         <button
           id="action-fix-round"
@@ -108,19 +108,22 @@ const createRoundView = (focusedRound) => {
         </button>
       </div>
     `)
-    button.addEventListener('click', closeRound)
-    dom.appendChild(button)
+    closeButton.addEventListener('click', closeRound)
+    dom.appendChild(closeButton)
   } else {
     const reOpenButton = domFromHTML(`
       <div class="flex">
         <button
-          id="action-reopen-round"
+          id="action-attempt-reopen-round"
           class="btn btn-alert right"
         >
           Fehler korrigieren
         </button>
       </div>
     `)
+    reOpenButton.addEventListener('click', () =>
+      attemptReopenRound(focusedRound)
+    )
     dom.appendChild(reOpenButton)
   }
 
@@ -158,4 +161,20 @@ const closeRound = () => {
   dump('history', history)
   setNextRound(history, setting, roundCount)
   render()
+}
+
+const attemptReopenRound = (roundNumber) => {
+  // reopening the round is safe if following round is closed, or if this is the
+  // last round. Else, changing results would lead to recalculating the setting
+  // of the following round. This would be a problem if the following round
+  // already started (but has not been closed yet). That is why the user cannot
+  // re
+  const history = load('history')
+  const followingRound = history[roundNumber]
+  if (isTruthy(followingRound) && roundIsOpen(followingRound)) {
+    createReopenRoundConfirmation(roundNumber)
+    return
+  }
+
+  reopenRound(roundNumber)
 }
