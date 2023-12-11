@@ -38,6 +38,24 @@ const isTruthy = (value) => {
 
 const randomId = () => Math.random().toString(36).replace(/^0\./, '_')
 
+const groupBy = (array, comparator) => {
+  // requires array to be pre-sorted by projection function
+  if (!isTruthy(array)) return []
+  groups = []
+  currentGroup = [array[0]]
+
+  for (element of array.slice(1)) {
+    if (comparator(currentGroup[0], element)) {
+      currentGroup.push(element)
+    } else {
+      groups.push(currentGroup)
+      currentGroup = [element]
+    }
+  }
+  groups.push(currentGroup)
+  return groups
+}
+
 /*************************
  *   KEY-VALUE-STORAGE   *
  ************************/
@@ -79,4 +97,8 @@ const domFromHTML = (html) => {
 
   if (result.length == 1) return result[0]
   return result
+}
+
+if (typeof exports !== 'undefined') {
+  exports.groupBy = groupBy
 }

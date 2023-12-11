@@ -1,5 +1,5 @@
 let expect = require('chai').expect
-var lib = require('../app/lib')
+let lib = require('../app/lib')
 
 describe('Determination of Free Game', function () {
   let participants = [
