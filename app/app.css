@@ -1,7 +1,7 @@
 :root {
   --color-action: #007bff;
   --color-ok: #cdffdd;
-  --color-alert: red;
+  --color-alert: #dc143c;
   --color-green: #28a745;
   --color-yellow: #ffc107;
   --color-white: #f8f9fa;
@@ -80,6 +80,13 @@
 .btn-yellow {
   background: var(--color-yellow);
   color: var(--color-black);
+}
+
+.btn-alert {
+  color: var(--color-alert);
+  border-color: var(--color-alert);
+  background: #f8d7da;
+  border-width: 2px;
 }
 
 h1,

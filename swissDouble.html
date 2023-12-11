@@ -6,7 +6,7 @@
     <style>:root {
   --color-action: #007bff;
   --color-ok: #cdffdd;
-  --color-alert: red;
+  --color-alert: #dc143c;
   --color-green: #28a745;
   --color-yellow: #ffc107;
   --color-white: #f8f9fa;
@@ -85,6 +85,13 @@
 .btn-yellow {
   background: var(--color-yellow);
   color: var(--color-black);
+}
+
+.btn-alert {
+  color: var(--color-alert);
+  border-color: var(--color-alert);
+  background: #f8d7da;
+  border-width: 2px;
 }
 
 h1,
@@ -805,7 +812,20 @@ const createRoundView = (focusedRound) => {
     `)
     button.addEventListener('click', closeRound)
     dom.appendChild(button)
+  } else {
+    const reOpenButton = domFromHTML(`
+      <div class="flex">
+        <button
+          id="action-reopen-round"
+          class="btn btn-alert right"
+        >
+          Fehler korrigieren
+        </button>
+      </div>
+    `)
+    dom.appendChild(reOpenButton)
   }
+
   document.getElementById('round-nav')?.after(dom)
   highlightRoundNavItem(focusedRound)
 }

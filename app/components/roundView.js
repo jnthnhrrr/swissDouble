@@ -110,7 +110,20 @@ const createRoundView = (focusedRound) => {
     `)
     button.addEventListener('click', closeRound)
     dom.appendChild(button)
+  } else {
+    const reOpenButton = domFromHTML(`
+      <div class="flex">
+        <button
+          id="action-reopen-round"
+          class="btn btn-alert right"
+        >
+          Fehler korrigieren
+        </button>
+      </div>
+    `)
+    dom.appendChild(reOpenButton)
   }
+
   document.getElementById('round-nav')?.after(dom)
   highlightRoundNavItem(focusedRound)
 }
