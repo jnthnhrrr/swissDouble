@@ -31,13 +31,13 @@
   background: var(--color-ok);
 }
 
-#round-view.past-round .match,
-#round-view.past-round .match .result .btn-result {
+#round-view.fixed-round .match,
+#round-view.fixed-round .match .result .btn-result {
   background: var(--color-subtle) !important;
   color: var(--color-light) !important;
 }
 
-#round-view.past-round h2 {
+#round-view.fixed-round h2 {
   color: var(--color-light) !important;
 }
 

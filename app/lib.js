@@ -1,7 +1,3 @@
-/*************************
- *      CALCULATIONS     *
- ************************/
-
 // history is an array of rounds.
 // Each round in history is an array of matches.
 // Each regular match has the following structure:
@@ -32,13 +28,8 @@ const tournamentHasFinished = (history, roundCount) => {
 const roundIsOpen = (round) => round.some((match) => match.winningTeam === null)
 
 const calculateCurrentRound = () => {
-  // which round is current round
+  // which round is current round, 1-indexed
   const history = load('history')
-  for (const [index, round] of history.entries()) {
-    if (roundIsOpen(round)) {
-      return index + 1
-    }
-  }
   return history.length
 }
 
@@ -206,6 +197,12 @@ const calculateRanking = (participants, history) => {
     buchholz[participant],
   ])
   return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2])
+}
+
+const resetNextRound = (history, setting, roundCount) => {
+  history.pop()
+  dump('history', history)
+  setNextRound(history, setting, roundCount)
 }
 
 const setNextRound = (history, setting, roundCount) => {

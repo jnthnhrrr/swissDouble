@@ -6,7 +6,7 @@ const freeGameDom = (match) =>
     </div>
   `)
 
-const resultDom = (match, changeable) => {
+const resultDom = (match, editable) => {
   const dom = domFromHTML(`<div class="result"></div>`)
 
   const teamOneResultDom = domFromHTML(`
@@ -21,7 +21,7 @@ const resultDom = (match, changeable) => {
     }</button>
   `)
 
-  if (changeable) {
+  if (editable) {
     teamOneResultDom.addEventListener('click', () => {
       setWinner(teamOneResultDom, teamTwoResultDom)
     })
@@ -44,7 +44,7 @@ const setWinner = (thisDom, thatDom) => {
   thatDom.classList.add('set')
 }
 
-const regularMatchDom = (match, openRound) => {
+const regularMatchDom = (match, editable) => {
   const teamOne = domFromHTML(`
     <div class="team">
       <div class="player">${match.teams[0][0]}</div>
@@ -58,7 +58,7 @@ const regularMatchDom = (match, openRound) => {
     </div>
   `)
 
-  const result = resultDom(match, openRound)
+  const result = resultDom(match, editable)
 
   const dom = domFromHTML(`<div class="match"></div>`)
 
@@ -71,17 +71,24 @@ const regularMatchDom = (match, openRound) => {
 const createRoundView = (focusedRound) => {
   destroyRoundView()
   const history = load('history')
+
   if (!isTruthy(history)) return
 
   const roundCount = load('roundCount')
   const currentRound = calculateCurrentRound()
   const tournamentIsOver = tournamentHasFinished(history, roundCount)
+  const tournamentIsNotOverYet = !tournamentIsOver
 
   const dom = domFromHTML(`<div id="round-view" class="page border"></div>`)
 
-  focusedRound != currentRound || tournamentIsOver
-    ? dom.classList.add('past-round')
-    : dom.classList.add('current-round')
+  const roundIsCurrent = focusedRound == currentRound
+  const roundIsOpen = roundIsCurrent && tournamentIsNotOverYet
+  const roundIsBeingCorrected = load('correctingRound') == focusedRound
+  const roundIsEditable = roundIsOpen || roundIsBeingCorrected
+
+  roundIsEditable
+    ? dom.classList.add('editable-round')
+    : dom.classList.add('fixed-round')
 
   const round = history[focusedRound - 1]
 
@@ -90,14 +97,13 @@ const createRoundView = (focusedRound) => {
   `)
   let matchDoms = []
   for (const match of round) {
-    const roundIsOpen = focusedRound == currentRound && !tournamentIsOver
     match.isFreeGame
       ? matchDoms.push(freeGameDom(match))
-      : matchDoms.push(regularMatchDom(match, roundIsOpen))
+      : matchDoms.push(regularMatchDom(match, roundIsEditable))
   }
   dom.replaceChildren(heading, ...matchDoms)
 
-  if (focusedRound == calculateCurrentRound() && !tournamentIsOver) {
+  if (roundIsEditable) {
     const closeButton = domFromHTML(`
       <div class="flex">
         <button
@@ -108,7 +114,9 @@ const createRoundView = (focusedRound) => {
         </button>
       </div>
     `)
-    closeButton.addEventListener('click', closeRound)
+    closeButton.addEventListener('click', () => {
+      closeRound(focusedRound)
+    })
     dom.appendChild(closeButton)
   } else {
     const reOpenButton = domFromHTML(`
@@ -133,13 +141,13 @@ const createRoundView = (focusedRound) => {
 
 const destroyRoundView = () => document.getElementById('round-view')?.remove()
 
-const closeRound = () => {
+const closeRound = (roundNumber) => {
   const history = load('history')
-  const roundCount = load('roundCount')
   const setting = load('setting')
+  const roundCount = load('roundCount')
+  const correctingThisRound = load('correctingRound') != undefined
 
-  const currentRound = calculateCurrentRound()
-  const round = history[currentRound - 1]
+  const round = history[roundNumber - 1]
   let index = 0
   for (const result of document.querySelectorAll(
     '.match .result .btn-result.second'
@@ -157,24 +165,29 @@ const closeRound = () => {
     index++
   }
 
-  history[currentRound - 1] = round
+  history[roundNumber - 1] = round
   dump('history', history)
+  if (correctingThisRound) {
+    erase('correctingRound')
+    resetNextRound(history, setting, roundCount)
+  }
   setNextRound(history, setting, roundCount)
   render()
 }
 
 const attemptReopenRound = (roundNumber) => {
-  // reopening the round is safe if following round is closed, or if this is the
+  // reopening the round is safe if all rounds are closed, or if this is the
   // last round. Else, changing results would lead to recalculating the setting
-  // of the following round. This would be a problem if the following round
+  // of the open round. This would be a problem if the open round
   // already started (but has not been closed yet). That is why the user cannot
-  // re
+  // reopen the the round directly, but has to confirm their intent for the open
+  // round to be reset.
   const history = load('history')
-  const followingRound = history[roundNumber]
-  if (isTruthy(followingRound) && roundIsOpen(followingRound)) {
-    createReopenRoundConfirmation(roundNumber)
+  const roundCount = load('roundCount')
+  if (tournamentHasFinished(history, roundCount)) {
+    reopenRound(roundNumber)
     return
   }
-
-  reopenRound(roundNumber)
+  const currentRoundNumber = calculateCurrentRound()
+  createReopenRoundConfirmation(roundNumber, currentRoundNumber)
 }
