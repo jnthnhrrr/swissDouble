@@ -8,6 +8,10 @@
   font-weight: bold;
 }
 
-#ranking-table tr:nth-child(even) {
+#ranking-table tr.dark {
   background: var(--color-subtle);
+}
+
+#ranking-table table {
+  border-collapse: collapse;
 }

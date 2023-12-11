@@ -231,8 +231,12 @@ h2 {
   font-weight: bold;
 }
 
-#ranking-table tr:nth-child(even) {
+#ranking-table tr.dark {
   background: var(--color-subtle);
+}
+
+#ranking-table table {
+  border-collapse: collapse;
 }
 #open-dialog {
   position: relative;
@@ -361,6 +365,24 @@ const isTruthy = (value) => {
 
 const randomId = () => Math.random().toString(36).replace(/^0\./, '_')
 
+const groupBy = (array, comparator) => {
+  // requires array to be pre-sorted by projection function
+  if (!isTruthy(array)) return []
+  groups = []
+  currentGroup = [array[0]]
+
+  for (element of array.slice(1)) {
+    if (comparator(currentGroup[0], element)) {
+      currentGroup.push(element)
+    } else {
+      groups.push(currentGroup)
+      currentGroup = [element]
+    }
+  }
+  groups.push(currentGroup)
+  return groups
+}
+
 /*************************
  *   KEY-VALUE-STORAGE   *
  ************************/
@@ -402,6 +424,10 @@ const domFromHTML = (html) => {
 
   if (result.length == 1) return result[0]
   return result
+}
+
+if (typeof exports !== 'undefined') {
+  exports.groupBy = groupBy
 }
 // history is an array of rounds.
 // Each round in history is an array of matches.
@@ -1029,7 +1055,7 @@ const headingDom = (round, tournamentIsOver) =>
       </div>
     `)
 
-const tableDom = (ranking) => {
+const tableDom = (rankingGroups) => {
   const dom = domFromHTML(`<table class="result-table"></table>`)
   const rows = []
   rows.push(
@@ -1042,26 +1068,43 @@ const tableDom = (ranking) => {
       </tr>
     `)
   )
-  for (const [index, [player, points, buchholz]] of ranking.entries()) {
-    rows.push(
-      domFromHTML(`
-      <tr>
-        <td>${index + 1}</td>
-        <td>${player}</td>
-        <td>${points}</td>
-        <td>${buchholz}</td>
-      </tr>
-    `)
-    )
+  let rank = 1
+  let dark = true
+  for (const group of rankingGroups) {
+    for (const [name, points, buchholz] of group) {
+      rows.push(
+        domFromHTML(`
+          <tr class="${dark ? 'dark' : 'bright'}">
+            <td>${rank}</td>
+            <td>${name}</td>
+            <td>${points}</td>
+            <td>${buchholz}</td>
+          </tr>
+        `)
+      )
+    }
+    dark = !dark
+    rank += group.length
   }
   dom.replaceChildren(...rows)
   return dom
+}
+
+const groupRankingByPointsAndBuchholz = (ranking) => {
+  return groupBy(
+    ranking,
+    (
+      [thisName, thisPoints, thisBuchholz],
+      [thatName, thatPoints, thatBuchholz]
+    ) => thisPoints == thatPoints && thisBuchholz == thatBuchholz
+  )
 }
 
 const createRankingTable = (participants, history) => {
   if (!participants) return
 
   const ranking = calculateRanking(participants, history)
+  const groups = groupRankingByPointsAndBuchholz(ranking)
   const title = load('title')
   const roundCount = load('roundCount')
   const currentRound = calculateCurrentRound()
@@ -1077,7 +1120,7 @@ const createRankingTable = (participants, history) => {
   dom.replaceChildren(
     titleDom(title),
     headingDom(rankedRound, tournamentHasFinished(history, roundCount)),
-    tableDom(ranking)
+    tableDom(groups)
   )
   document.getElementById('tournament-data').replaceChildren(dom)
 }

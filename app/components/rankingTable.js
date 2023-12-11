@@ -12,7 +12,7 @@ const headingDom = (round, tournamentIsOver) =>
       </div>
     `)
 
-const tableDom = (ranking) => {
+const tableDom = (rankingGroups) => {
   const dom = domFromHTML(`<table class="result-table"></table>`)
   const rows = []
   rows.push(
@@ -25,26 +25,43 @@ const tableDom = (ranking) => {
       </tr>
     `)
   )
-  for (const [index, [player, points, buchholz]] of ranking.entries()) {
-    rows.push(
-      domFromHTML(`
-      <tr>
-        <td>${index + 1}</td>
-        <td>${player}</td>
-        <td>${points}</td>
-        <td>${buchholz}</td>
-      </tr>
-    `)
-    )
+  let rank = 1
+  let dark = true
+  for (const group of rankingGroups) {
+    for (const [name, points, buchholz] of group) {
+      rows.push(
+        domFromHTML(`
+          <tr class="${dark ? 'dark' : 'bright'}">
+            <td>${rank}</td>
+            <td>${name}</td>
+            <td>${points}</td>
+            <td>${buchholz}</td>
+          </tr>
+        `)
+      )
+    }
+    dark = !dark
+    rank += group.length
   }
   dom.replaceChildren(...rows)
   return dom
+}
+
+const groupRankingByPointsAndBuchholz = (ranking) => {
+  return groupBy(
+    ranking,
+    (
+      [thisName, thisPoints, thisBuchholz],
+      [thatName, thatPoints, thatBuchholz]
+    ) => thisPoints == thatPoints && thisBuchholz == thatBuchholz
+  )
 }
 
 const createRankingTable = (participants, history) => {
   if (!participants) return
 
   const ranking = calculateRanking(participants, history)
+  const groups = groupRankingByPointsAndBuchholz(ranking)
   const title = load('title')
   const roundCount = load('roundCount')
   const currentRound = calculateCurrentRound()
@@ -60,7 +77,7 @@ const createRankingTable = (participants, history) => {
   dom.replaceChildren(
     titleDom(title),
     headingDom(rankedRound, tournamentHasFinished(history, roundCount)),
-    tableDom(ranking)
+    tableDom(groups)
   )
   document.getElementById('tournament-data').replaceChildren(dom)
 }
