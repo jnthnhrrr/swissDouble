@@ -1,6 +1,6 @@
 {
   "name": "swiss-double",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Swiss-System Style Tournament Software for Teams of Two Players",
   "scripts": {
     "test": "mocha --reporter spec",
