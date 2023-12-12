@@ -9,7 +9,7 @@
   },
   "author": "Jonathan Scholbach",
   "license": "MIT",
-  "dependencies": {
+  "devDependencies": {
     "chai": "^4.3.10",
     "glob": "^10.3.10",
     "mocha": "^10.2.0"
