@@ -1,6 +1,16 @@
 #header {
   width: 100%;
   overflow: hidden;
+  display: flex;
+  gap: 12px;
+}
+
+#header .left-group {
+  margin-right: auto;
+}
+
+#header .right-group {
+  margin-left: auto;
 }
 
 #header .section {

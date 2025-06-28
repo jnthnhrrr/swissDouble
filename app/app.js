@@ -1,5 +1,13 @@
 window.onload = () => render()
 
+const STORAGE_KEYS = [
+  'history',
+  'participants',
+  'roundCount',
+  'setting',
+  'title',
+]
+
 const render = () => {
   destroyRoundNavigation()
   destroyRoundView()
@@ -64,11 +72,9 @@ const startTournament = () => {
 
 const createTournament = () => {
   storeTournament()
-  erase('history')
-  erase('title')
-  erase('participants')
-  erase('setting')
-  erase('roundCount')
+  for (const key of STORAGE_KEYS) {
+    erase(key)
+  }
   render()
 }
 
@@ -93,10 +99,59 @@ const openTournament = (title) => {
   storeTournament()
 
   const tournament = load('savedTournaments')[title]
-  dump('history', tournament.history)
-  dump('participants', tournament.participants)
-  dump('roundCount', tournament.roundCount)
-  dump('setting', tournament.setting)
-  dump('title', tournament.title)
+  for (const key of STORAGE_KEYS) {
+    dump(key, tournament[key])
+  }
   render()
+}
+
+const downloadJSON = (data, filename) => {
+  const jsonString = JSON.stringify(data, null, 2)
+  const blob = new Blob([jsonString], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+const exportTournament = () => {
+  const title = load('title')
+  const data = {}
+
+  for (const key of STORAGE_KEYS) {
+    const value = load(key)
+    if (value !== null) {
+      data[key] = value
+    }
+  }
+  downloadJSON(data, title + '.json')
+}
+
+const openImportFileDialogue = () => {
+  document.getElementById('import-tournament-file-input').click()
+}
+
+const importTournament = (event) => {
+  const file = event.target.files[0]
+
+  if (!file) {
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = function (e) {
+    const data = JSON.parse(e.target.result)
+
+    for (const key of Object.keys(data)) {
+      const value = data[key]
+      dump(key, value)
+    }
+    render()
+  }
+  reader.readAsText(file)
 }
