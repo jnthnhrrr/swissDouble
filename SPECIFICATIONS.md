@@ -1,9 +1,9 @@
 # Partnering
 
-1. Teams are assigned randomly each round.
+1. Team partners are assigned randomly each round.
 2. No two players are partnered more than once in a tournament.
-3. The partnering is independent from the points or buchholz players have, with
-   one exception:
+3. The partnering is independent from the points or Buchholz ranking players
+   have, with one exception:
 4. In each round, the players who have the lowest rank and have not yet had a
    free game, will be assigned a free game.
 
@@ -13,6 +13,7 @@
    according to the logic of Swiss System: Each team plays against a team with
    the same amount of points. If this is not possible, the setting is chosen
    which minimises the difference.
+
 2. In the current implementation, there are two notable differences from Swiss
    System
     1. In Swiss System, each group is "folded", so that the top member of a
@@ -32,6 +33,6 @@
 # Ranking
 
 1. Participants are ranked by their points and, as a second criterion, by their
-   ranking accodring to Buchholz.
+   ranking according to Buchholz.
 2. We calculate the Buchholz ranking of a player as the sum of the points of
    their opponents minus the sum of the points of their partners.
