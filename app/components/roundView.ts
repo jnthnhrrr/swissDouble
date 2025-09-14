@@ -1,25 +1,54 @@
-const freeGameDom = (match) =>
-  domFromHTML(`
+import { createAlert } from './alert.js'
+import { highlightRoundNavItem } from './roundNavigation.js'
+import {
+  reopenRound,
+  createReopenRoundConfirmation,
+} from './reopenRoundConfirmation.js'
+
+import type { FreeGameMatch, RegularMatch } from '../types.js'
+import { load, dump, erase } from '../storage.js'
+import { isTruthy } from '../utils.js'
+import { htmlElement } from '../dom.js'
+import {
+  calculateCurrentRound,
+  resetNextRound,
+  setNextRound,
+  tournamentHasFinished,
+} from '../lib.js'
+
+import { render } from '../app.js'
+
+const freeGameDom = (match: FreeGameMatch) =>
+  htmlElement(
+    'div',
+    `
     <div class="match freegame flex">
       <div class="team">FREISPIEL</div>
       <div class="team">${match.player}</div>
     </div>
-  `)
+  `
+  )
 
-const resultDom = (match, editable) => {
-  const dom = domFromHTML(`<div class="result"></div>`)
+const resultDom = (match: RegularMatch, editable: boolean) => {
+  const dom = htmlElement('div', `<div class="result"></div>`)
 
-  const teamOneResultDom = domFromHTML(`
+  const teamOneResultDom = htmlElement(
+    'button',
+    `
     <button class="btn btn-result">${
       match.winningTeam == 0 ? 1 : match.winningTeam === null ? '?' : 0
     }</button>
-  `)
+  `
+  )
 
-  const teamTwoResultDom = domFromHTML(`
+  const teamTwoResultDom = htmlElement(
+    'button',
+    `
     <button class="btn btn-result second">${
       match.winningTeam == 1 ? 1 : match.winningTeam === null ? '?' : 0
     }</button>
-  `)
+  `
+  )
 
   if (editable) {
     teamOneResultDom.addEventListener('click', () => {
@@ -31,36 +60,42 @@ const resultDom = (match, editable) => {
   }
 
   dom.appendChild(teamOneResultDom)
-  dom.appendChild(domFromHTML(`<span class="conjunctor">:</span>`))
+  dom.appendChild(htmlElement('span', `<span class="conjunctor">:</span>`))
   dom.appendChild(teamTwoResultDom)
 
   return dom
 }
 
-const setWinner = (thisDom, thatDom) => {
-  thisDom.innerHTML = 1
-  thatDom.innerHTML = 0
+const setWinner = (thisDom: HTMLElement, thatDom: HTMLElement) => {
+  thisDom.innerHTML = '1'
+  thatDom.innerHTML = '0'
   thisDom.classList.add('set')
   thatDom.classList.add('set')
 }
 
-const regularMatchDom = (match, editable) => {
-  const teamOne = domFromHTML(`
+const regularMatchDom = (match: RegularMatch, editable: boolean) => {
+  const teamOne = htmlElement(
+    'div',
+    `
     <div class="team">
       <div class="player">${match.teams[0][0]}</div>
       <div class="player">${match.teams[0][1]}</div>
     </div>
-  `)
-  const teamTwo = domFromHTML(`
+  `
+  )
+  const teamTwo = htmlElement(
+    'div',
+    `
     <div class="team">
       <div class="player">${match.teams[1][0]}</div>
       <div class="player">${match.teams[1][1]}</div>
     </div>
-  `)
+  `
+  )
 
   const result = resultDom(match, editable)
 
-  const dom = domFromHTML(`<div class="match"></div>`)
+  const dom = htmlElement('div', `<div class="match"></div>`)
 
   dom.appendChild(teamOne)
   dom.appendChild(result)
@@ -68,7 +103,7 @@ const regularMatchDom = (match, editable) => {
   return dom
 }
 
-const createRoundView = (focusedRound) => {
+export const createRoundView = (focusedRound: number) => {
   destroyRoundView()
   const history = load('history')
 
@@ -79,7 +114,10 @@ const createRoundView = (focusedRound) => {
   const tournamentIsOver = tournamentHasFinished(history, roundCount)
   const tournamentIsNotOverYet = !tournamentIsOver
 
-  const dom = domFromHTML(`<div id="round-view" class="page border"></div>`)
+  const dom = htmlElement(
+    'div',
+    `<div id="round-view" class="page border"></div>`
+  )
 
   const roundIsCurrent = focusedRound == currentRound
   const roundIsOpen = roundIsCurrent && tournamentIsNotOverYet
@@ -92,19 +130,24 @@ const createRoundView = (focusedRound) => {
 
   const round = history[focusedRound - 1]
 
-  let heading = domFromHTML(`
+  let heading = htmlElement(
+    'div',
+    `
     <div class="flex"><h2 class="center">Runde ${focusedRound}</h2></div
-  `)
-  let matchDoms = []
+  `
+  )
+  let matchDoms: HTMLDivElement[] = []
   for (const match of round) {
-    match.isFreeGame
+    'isFreeGame' in match
       ? matchDoms.push(freeGameDom(match))
       : matchDoms.push(regularMatchDom(match, roundIsEditable))
   }
   dom.replaceChildren(heading, ...matchDoms)
 
   if (roundIsEditable) {
-    const closeButton = domFromHTML(`
+    const closeButton = htmlElement(
+      'div',
+      `
       <div class="flex">
         <button
           id="action-fix-round"
@@ -113,13 +156,16 @@ const createRoundView = (focusedRound) => {
           Runde Festschreiben
         </button>
       </div>
-    `)
+    `
+    )
     closeButton.addEventListener('click', () => {
       closeRound(focusedRound)
     })
     dom.appendChild(closeButton)
   } else {
-    const reOpenButton = domFromHTML(`
+    const reOpenButton = htmlElement(
+      'div',
+      `
       <div class="flex">
         <button
           id="action-attempt-reopen-round"
@@ -128,20 +174,22 @@ const createRoundView = (focusedRound) => {
           Fehler korrigieren
         </button>
       </div>
-    `)
+    `
+    )
     reOpenButton.addEventListener('click', () =>
       attemptReopenRound(focusedRound)
     )
     dom.appendChild(reOpenButton)
   }
 
-  document.getElementById('round-nav')?.after(dom)
+  ;(document.getElementById('round-nav') as HTMLDivElement)!.after(dom)
   highlightRoundNavItem(focusedRound)
 }
 
-const destroyRoundView = () => document.getElementById('round-view')?.remove()
+export const destroyRoundView = () =>
+  document.getElementById('round-view')?.remove()
 
-const closeRound = (roundNumber) => {
+const closeRound = (roundNumber: number) => {
   const history = load('history')
   const setting = load('setting')
   const roundCount = load('roundCount')
@@ -159,9 +207,10 @@ const closeRound = (roundNumber) => {
       `)
       return
     }
+    // We are in a RegularMatch due to query selector above containing .result
     result.innerHTML == '1'
-      ? (round[index].winningTeam = 1)
-      : (round[index].winningTeam = 0)
+      ? ((round[index] as RegularMatch).winningTeam = 1)
+      : ((round[index] as RegularMatch).winningTeam = 0)
     index++
   }
 
@@ -175,7 +224,7 @@ const closeRound = (roundNumber) => {
   render()
 }
 
-const attemptReopenRound = (roundNumber) => {
+const attemptReopenRound = (roundNumber: number) => {
   // reopening the round is safe if all rounds are closed, or if this is the
   // last round. Else, changing results would lead to recalculating the setting
   // of the open round. This would be a problem if the open round

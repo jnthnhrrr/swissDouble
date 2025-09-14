@@ -1,5 +1,5 @@
-let expect = require('chai').expect
-var lib = require('../../app/lib')
+import { expect } from 'chai'
+import { calculatePoints, calculateRanking, calculateBuchholz } from '../../dist/lib.js'
 
 describe('Ranking', function () {
   describe('calculatePoints', function () {
@@ -31,7 +31,7 @@ describe('Ranking', function () {
         Clara: 1,
         Dieter: 0,
       }
-      expect(lib.calculatePoints(participants, history)).to.be.deep.equal(expected)
+      expect(calculatePoints(participants, history)).to.be.deep.equal(expected)
     })
 
     it('works correctly with free games', function () {
@@ -58,7 +58,7 @@ describe('Ranking', function () {
         Clara: 0,
         Dieter: 0,
       }
-      expect(lib.calculatePoints(participants, history)).to.be.deep.equal(expected)
+      expect(calculatePoints(participants, history)).to.be.deep.equal(expected)
     })
   })
 
@@ -68,7 +68,7 @@ describe('Ranking', function () {
         const participants = ['Player1', 'Player2', 'Player3']
         const history = []
 
-        const result = lib.calculateRanking(participants, history)
+        const result = calculateRanking(participants, history)
 
         expect(result).to.have.length(3)
         result.forEach(([player, points, buchholz]) => {
@@ -82,7 +82,7 @@ describe('Ranking', function () {
         const participants = ['Alice', 'Bob', 'Charlie']
         const history = []
 
-        const result = lib.calculateRanking(participants, history)
+        const result = calculateRanking(participants, history)
 
         expect(result[0][0]).to.equal('Alice')
         expect(result[1][0]).to.equal('Bob')
@@ -114,7 +114,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateRanking(participants, history)
+        const result = calculateRanking(participants, history)
 
         expect(result[0][0]).to.equal('Player1')
         expect(result[0][1]).to.equal(2)
@@ -142,7 +142,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateRanking(participants, history)
+        const result = calculateRanking(participants, history)
 
         // Player3 and Player4 both have 1 point
         // Their buchholz: both get points from opponents Player1+Player2 = 0+0 = 0
@@ -187,7 +187,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateRanking(participants, history)
+        const result = calculateRanking(participants, history)
 
         // Player1 and Player2 both have 1 point, Player3 has 1 point, Player4 has 0
         // Verify the structure is correct
@@ -214,7 +214,7 @@ describe('Ranking', function () {
         const participants = ['Player1', 'Player2']
         const history = []
 
-        const result = lib.calculateRanking(participants, history)
+        const result = calculateRanking(participants, history)
 
         expect(result).to.be.an('array')
         expect(result).to.have.length(2)
@@ -232,7 +232,7 @@ describe('Ranking', function () {
         const participants = ['Alice', 'Bob', 'Charlie', 'Diana']
         const history = []
 
-        const result = lib.calculateRanking(participants, history)
+        const result = calculateRanking(participants, history)
 
         const resultPlayers = result.map((tuple) => tuple[0])
         expect(resultPlayers).to.have.members(participants)
@@ -272,7 +272,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateRanking(participants, history)
+        const result = calculateRanking(participants, history)
 
         expect(result).to.have.length(5)
 
@@ -296,7 +296,7 @@ describe('Ranking', function () {
       })
 
       it('handles empty participants list', () => {
-        const result = lib.calculateRanking([], [])
+        const result = calculateRanking([], [])
         expect(result).to.be.an('array')
         expect(result).to.have.length(0)
       })
@@ -325,7 +325,7 @@ describe('Ranking', function () {
         },
       ]
       let history = [firstRound, secondRound]
-      let points = lib.calculatePoints(participants, history)
+      let points = calculatePoints(participants, history)
 
       let expected = {
         Achim: 0, // -1 Berta + 1 Clara + 0 Dieter - 1 Clara + 1 Berta + 0 Dieter
@@ -333,7 +333,7 @@ describe('Ranking', function () {
         Clara: 2, // - 0 Dieter + 2 Achim + 1 Berta - 2 Achim + 1 Berta + 0 Dieter
         Dieter: 4, // -1 Clara + 2 Achim + 1 Berta - 1 Berta + 2 Achim + 1 Clara
       }
-      expect(lib.calculateBuchholz(points, history)).to.be.deep.equal(expected)
+      expect(calculateBuchholz(points, history)).to.be.deep.equal(expected)
     })
 
     it('works correctly with free games', function () {
@@ -352,7 +352,7 @@ describe('Ranking', function () {
         },
       ]
       let history = [firstRound]
-      let points = lib.calculatePoints(participants, history)
+      let points = calculatePoints(participants, history)
 
       let expected = {
         Achim: -1, // -1 Berta + 0 Clara + 0 Dieter
@@ -361,7 +361,7 @@ describe('Ranking', function () {
         Clara: 2, // +1 Achim + 1 Berta - 0 Dieter
         Dieter: 2, // +1 Achim + 1 Berta - 0 Clara
       }
-      expect(lib.calculateBuchholz(points, history)).to.be.deep.equal(expected)
+      expect(calculateBuchholz(points, history)).to.be.deep.equal(expected)
     })
 
     describe('when history is empty', () => {
@@ -369,7 +369,7 @@ describe('Ranking', function () {
         const points = { Player1: 2, Player2: 1, Player3: 0, Player4: 1 }
         const history = []
 
-        const result = lib.calculateBuchholz(points, history)
+        const result = calculateBuchholz(points, history)
 
         expect(result).to.deep.equal({
           Player1: 0,
@@ -395,7 +395,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateBuchholz(points, history)
+        const result = calculateBuchholz(points, history)
 
         expect(result).to.deep.equal({
           Player1: 0,
@@ -421,7 +421,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateBuchholz(points, history)
+        const result = calculateBuchholz(points, history)
 
         // Player1: -Player2's points (1) + opponents' points (0+0) = -1
         expect(result['Player1']).to.equal(-1)
@@ -456,7 +456,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateBuchholz(points, history)
+        const result = calculateBuchholz(points, history)
 
         // Player1 partnered with Player2 (1pt) and Player3 (1pt)
         // Player1 opposed Player3,4 (1+0=1pt) and Player2,4 (1+0=1pt)
@@ -499,7 +499,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateBuchholz(points, history)
+        const result = calculateBuchholz(points, history)
 
         // Free games don't affect buchholz calculation
         expect(result['Player5']).to.equal(0)
@@ -526,7 +526,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateBuchholz(points, history)
+        const result = calculateBuchholz(points, history)
 
         expect(result['Player1']).to.equal(0) // -0 + 0+0 = 0
         expect(result['Player2']).to.equal(0)
@@ -538,7 +538,7 @@ describe('Ranking', function () {
         const points = { Player1: 5 }
         const history = []
 
-        const result = lib.calculateBuchholz(points, history)
+        const result = calculateBuchholz(points, history)
 
         expect(result).to.deep.equal({ Player1: 0 })
       })
@@ -577,7 +577,7 @@ describe('Ranking', function () {
           ],
         ]
 
-        const result = lib.calculateBuchholz(points, history)
+        const result = calculateBuchholz(points, history)
 
         // Verify calculation makes sense (exact values depend on complex partner/opponent interactions)
         expect(typeof result['Player1']).to.equal('number')

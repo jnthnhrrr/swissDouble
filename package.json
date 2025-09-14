@@ -1,17 +1,23 @@
 {
   "name": "swiss-double",
   "version": "0.3.0",
+  "type": "module",
   "description": "Swiss-System Style Tournament Software for Teams of Two Players",
   "scripts": {
-    "test": "mocha --reporter spec test/**/*.js",
+    "test": "npm run transpile && mocha --reporter spec test/**/*.js",
+    "transpile": "tsc",
+    "type-check": "tsc",
     "format": "prettier app --no-semi --write --print-width 80 && prettier test --no-semi --write --print-width 100",
-    "build": "node build.js"
+    "build": "npx esbuild app/main.ts --bundle --format=iife --outfile=dist/bundle.js && node build.js"
   },
   "author": "Jonathan Herrera",
   "license": "MIT",
   "devDependencies": {
     "chai": "^4.3.10",
+    "esbuild": "^0.25.9",
     "glob": "^10.3.10",
-    "mocha": "^10.2.0"
+    "jsdom": "^27.0.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.9.2"
   }
 }

@@ -1,5 +1,5 @@
-let expect = require('chai').expect
-let lib = require('../../app/lib')
+import { expect } from 'chai'
+import { calculateFreeGamers, playerHadFreeGame } from '../../dist/lib.js'
 
 describe('Determination of Free Game', function () {
   let participants = [
@@ -59,27 +59,27 @@ describe('Determination of Free Game', function () {
   describe('playerHadFreeGame', function () {
     describe('when player had one free game in multiple rounds', function () {
       it('returns true', function () {
-        expect(lib.playerHadFreeGame('Hanna', history)).to.be.true
-        expect(lib.playerHadFreeGame('Ingo', history)).to.be.true
+        expect(playerHadFreeGame('Hanna', history)).to.be.true
+        expect(playerHadFreeGame('Ingo', history)).to.be.true
       })
     })
 
     describe('when player had no free game in multiple rounds', function () {
       it('returns false', function () {
-        expect(lib.playerHadFreeGame('Achim', history)).to.be.false
-        expect(lib.playerHadFreeGame('Berta', history)).to.be.false
-        expect(lib.playerHadFreeGame('Clara', history)).to.be.false
-        expect(lib.playerHadFreeGame('Dieter', history)).to.be.false
-        expect(lib.playerHadFreeGame('Emil', history)).to.be.false
-        expect(lib.playerHadFreeGame('Frieda', history)).to.be.false
-        expect(lib.playerHadFreeGame('Gerhard', history)).to.be.false
+        expect(playerHadFreeGame('Achim', history)).to.be.false
+        expect(playerHadFreeGame('Berta', history)).to.be.false
+        expect(playerHadFreeGame('Clara', history)).to.be.false
+        expect(playerHadFreeGame('Dieter', history)).to.be.false
+        expect(playerHadFreeGame('Emil', history)).to.be.false
+        expect(playerHadFreeGame('Frieda', history)).to.be.false
+        expect(playerHadFreeGame('Gerhard', history)).to.be.false
       })
     })
   })
 
   describe('calculateFreeGamers', function () {
     it('picks lowest ranked players without free game', function () {
-      expect(lib.calculateFreeGamers(participants, history)).to.be.deep.equal(new Set(['Clara']))
+      expect(calculateFreeGamers(participants, history)).to.be.deep.equal(new Set(['Clara']))
     })
   })
 })

@@ -1,5 +1,5 @@
-let expect = require('chai').expect
-let lib = require('../../app/lib')
+import { expect } from 'chai'
+import { calculatePoints } from '../../dist/lib.js'
 
 describe('calculatePoints', () => {
   describe('when history is empty', () => {
@@ -7,7 +7,7 @@ describe('calculatePoints', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4']
       const history = []
 
-      const result = lib.calculatePoints(participants, history)
+      const result = calculatePoints(participants, history)
 
       expect(result).to.deep.equal({
         Player1: 0,
@@ -33,7 +33,7 @@ describe('calculatePoints', () => {
         ],
       ]
 
-      const result = lib.calculatePoints(participants, history)
+      const result = calculatePoints(participants, history)
 
       expect(result).to.deep.equal({
         Player1: 0,
@@ -59,7 +59,7 @@ describe('calculatePoints', () => {
         ],
       ]
 
-      const result = lib.calculatePoints(participants, history)
+      const result = calculatePoints(participants, history)
 
       expect(result['Player1']).to.equal(1)
       expect(result['Player2']).to.equal(1)
@@ -81,7 +81,7 @@ describe('calculatePoints', () => {
         ],
       ]
 
-      const result = lib.calculatePoints(participants, history)
+      const result = calculatePoints(participants, history)
 
       expect(result['Player1']).to.equal(0)
       expect(result['Player2']).to.equal(0)
@@ -112,7 +112,7 @@ describe('calculatePoints', () => {
         ],
       ]
 
-      const result = lib.calculatePoints(participants, history)
+      const result = calculatePoints(participants, history)
 
       expect(result['Player1']).to.equal(1) // Won first round
       expect(result['Player2']).to.equal(2) // Won both rounds
@@ -140,7 +140,7 @@ describe('calculatePoints', () => {
         ],
       ]
 
-      const result = lib.calculatePoints(participants, history)
+      const result = calculatePoints(participants, history)
 
       expect(result['Player1']).to.equal(1)
       expect(result['Player2']).to.equal(1)
@@ -168,7 +168,7 @@ describe('calculatePoints', () => {
         ],
       ]
 
-      const result = lib.calculatePoints(participants, history)
+      const result = calculatePoints(participants, history)
 
       expect(result['Player1']).to.equal(1)
       expect(result['Player2']).to.equal(1)
@@ -208,7 +208,7 @@ describe('calculatePoints', () => {
         ],
       ]
 
-      const result = lib.calculatePoints(participants, history)
+      const result = calculatePoints(participants, history)
 
       expect(result['Player1']).to.equal(1) // Won round 1
       expect(result['Player2']).to.equal(2) // Won round 1 and round 2

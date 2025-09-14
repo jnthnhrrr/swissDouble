@@ -408,1095 +408,487 @@ h2 {
   min-width: 5em;
 }
 </style>
-    <script>/*************************
- *        GENERAL        *
- ************************/
+    <script>"use strict";
+(() => {
+  // app/storage.ts
+  var STORAGE_KEYS = [
+    "history",
+    "participants",
+    "roundCount",
+    "setting",
+    "title",
+    "departedPlayers",
+    "savedTournaments",
+    "correctingRound"
+  ];
+  var ROOT = "swiss-double";
+  var getStoreValue = () => {
+    let value = JSON.parse(localStorage.getItem(ROOT));
+    return value ? value : {};
+  };
+  var setStoreValue = (value) => localStorage.setItem(ROOT, JSON.stringify(value));
+  var load = (key, defaultValue) => {
+    const value = getStoreValue()[key];
+    return typeof value === "undefined" ? defaultValue : value;
+  };
+  var dump = (key, value) => {
+    let storeValue = getStoreValue();
+    storeValue[key] = value;
+    setStoreValue(storeValue);
+  };
+  var erase = (key) => {
+    let store = getStoreValue();
+    delete store[key];
+    setStoreValue(store);
+  };
 
-const setDiff = (these, those) =>
-  new Set([...these].filter((element) => !those.has(element)))
-
-const drawRandom = (set) => {
-  let array = Array.from(set)
-  return array[Math.floor(Math.random() * array.length)]
-}
-
-const findDuplicates = (array) =>
-  array.filter((item, index) => array.indexOf(item) !== index)
-
-const shuffle = (array) => {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[array[i], array[j]] = [array[j], array[i]]
-  }
-  return array
-}
-
-const isTruthy = (value) => {
-  // a more pythonic implementation of truthyness, regarding empty collections
-  // as falsy
-  try {
-    return !!value.length
-  } catch {}
-  try {
-    return !!Object.keys(value).length
-  } catch {}
-  try {
-    return !!value.size
-  } catch {}
-  return !!value
-}
-
-const randomId = () => Math.random().toString(36).replace(/^0\./, '_')
-
-const groupBy = (array, comparator) => {
-  // requires array to be pre-sorted by projection function
-  if (!isTruthy(array)) return []
-  groups = []
-  currentGroup = [array[0]]
-
-  for (element of array.slice(1)) {
-    if (comparator(currentGroup[0], element)) {
-      currentGroup.push(element)
-    } else {
-      groups.push(currentGroup)
-      currentGroup = [element]
+  // app/utils.ts
+  var setDiff = (these, those) => new Set([...these].filter((element) => !those.includes(element)));
+  var drawRandom = (set) => {
+    let array = Array.from(set);
+    return array[Math.floor(Math.random() * array.length)];
+  };
+  var findDuplicates = (array) => array.filter((item, index) => array.indexOf(item) !== index);
+  var isTruthy = (value) => {
+    try {
+      return !!value.length;
+    } catch {
     }
+    try {
+      return !!Object.keys(value).length;
+    } catch {
+    }
+    try {
+      return !!value.size;
+    } catch {
+    }
+    return !!value;
+  };
+  var randomId = () => Math.random().toString(36).replace(/^0\./, "_");
+  var groupBy = (array, comparator) => {
+    if (!isTruthy(array)) return [];
+    const groups = [];
+    let currentGroup = [array[0]];
+    for (const element of array.slice(1)) {
+      if (comparator(currentGroup[0], element)) {
+        currentGroup.push(element);
+      } else {
+        groups.push(currentGroup);
+        currentGroup = [element];
+      }
+    }
+    groups.push(currentGroup);
+    return groups;
+  };
+  var popRandom = (list) => list.splice(Math.floor(Math.random() * list.length), 1)[0];
+
+  // app/dom.ts
+  var readFromInputField = (id) => document.getElementById(id).value;
+  var writeToInputField = (id, value) => {
+    ;
+    document.getElementById(id).value = value;
+    return true;
+  };
+  function htmlElement(tag, html) {
+    html = html.trim();
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    const result = template.content.children;
+    if (result.length !== 1) {
+      throw new Error(`Expected exactly one element, got ${result.length}`);
+    }
+    const element = result[0];
+    if (element.tagName.toLowerCase() !== tag.toLowerCase()) {
+      throw new Error(
+        `Element tag mismatch: expected ${tag}, got ${element.tagName.toLowerCase()}`
+      );
+    }
+    return element;
   }
-  groups.push(currentGroup)
-  return groups
-}
 
-const popRandom = (list) =>
-  list.splice(Math.floor(Math.random() * list.length), 1)[0]
-
-/*************************
- *   KEY-VALUE-STORAGE   *
- ************************/
-
-const ROOT = 'swiss-double'
-const getStoreValue = () => {
-  let value = JSON.parse(localStorage.getItem(ROOT))
-  return value ? value : {}
-}
-
-const setStoreValue = (value) =>
-  localStorage.setItem(ROOT, JSON.stringify(value))
-
-const load = (key, defaultValue) => {
-  const value = getStoreValue()[key]
-  return typeof value === 'undefined' ? defaultValue : value
-}
-const dump = (key, value) => {
-  let storeValue = getStoreValue()
-  storeValue[key] = value
-  setStoreValue(storeValue)
-}
-
-const erase = (key) => {
-  let store = getStoreValue()
-  delete store[key]
-  setStoreValue(store)
-}
-
-/*************************
- *    DOM INTERACTION    *
- ************************/
-
-const domRead = (id) => document.getElementById(id).value
-const domWrite = (id, value) => {
-  document.getElementById(id).value = value
-  return true
-}
-
-const domFromHTML = (html) => {
-  html = html.trim()
-
-  const template = document.createElement('template')
-  template.innerHTML = html
-  const result = template.content.children
-
-  if (result.length == 1) return result[0]
-  return result
-}
-
-if (typeof exports !== 'undefined') {
-  exports.isTruthy = isTruthy
-  exports.setDiff = setDiff
-  exports.groupBy = groupBy
-  exports.findDuplicates = findDuplicates
-  exports.drawRandom = drawRandom
-  exports.popRandom = popRandom
-}
-// history is an array of rounds.
-// Each round in history is an array of matches.
-// Each regular match has the following structure:
-//
-// {
-//   teams: [["Player1", "Player2"], ["Player3", "Player4"]],
-//   winningTeam: 0,
-// }
-//
-// where the value of winningTeam indicates the index of the winning team in
-// teams field.
-// matches representing freegames have the following structure:
-//
-// {
-//   isFreeGame: true,
-//   player: "Player1",
-// }
-//
-
-const tournamentHasStarted = (history) => isTruthy(history)
-
-const tournamentHasFinished = (history, roundCount) => {
-  return history.length == roundCount && !roundIsOpen(history[roundCount - 1])
-}
-
-const roundIsOpen = (round) => round.some((match) => match.winningTeam === null)
-
-const calculateCurrentRound = () => {
-  // which round is current round, 1-indexed
-  const history = load('history')
-  return history.length
-}
-
-const getActiveParticipants = () => {
-  const participants = load('participants')
-  let departedPlayers = load('departedPlayers', {})
-  departedPlayers = typeof departedPlayers != 'undefined' ? departedPlayers : {}
-  const activeParticipants = participants.filter((participant) => {
-    return !(participant in departedPlayers)
-  })
-  return activeParticipants
-}
-
-const determineNextRound = (participants, history) => {
-  const ranking = calculateRanking(participants, history)
-  const rankingObject = Object.fromEntries(ranking)
-  const activeParticipants = getActiveParticipants()
-  const forbiddenPairings = calculateForbiddenPairings(
-    activeParticipants,
-    history
-  )
-  const freeGamers = calculateFreeGamers(activeParticipants, history)
-  let pairings
-  if (history.length == 0) {
-    pairings = drawPairingsForFirstRound(participants, freeGamers)
-  } else {
-    pairings = drawPairings(
+  // app/lib.ts
+  var tournamentHasStarted = (history) => isTruthy(history);
+  var tournamentHasFinished = (history, roundCount) => {
+    return history.length == roundCount && !roundIsOpen(history[roundCount - 1]);
+  };
+  var roundIsOpen = (round) => round.some((match) => match.winningTeam === null);
+  var calculateCurrentRound = () => {
+    const history = load("history");
+    return history.length;
+  };
+  var getActiveParticipants = () => {
+    const participants = load("participants");
+    let departedPlayers = load("departedPlayers", {});
+    departedPlayers = typeof departedPlayers != "undefined" ? departedPlayers : {};
+    const activeParticipants = participants.filter((participant) => {
+      return !(participant in departedPlayers);
+    });
+    return activeParticipants;
+  };
+  var determineNextRound = (participants, history) => {
+    const ranking = calculateRanking(participants, history);
+    const rankingObject = Object.fromEntries(ranking);
+    const activeParticipants = getActiveParticipants();
+    const forbiddenPairings = calculateForbiddenPairings(
       activeParticipants,
-      forbiddenPairings,
-      freeGamers
-    ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
-  }
-  let matches = []
-  for (let i = 0; i < pairings.length; i += 2) {
-    matches.push({
-      teams: [pairings[i], pairings[i + 1]],
-      winningTeam: null,
-    })
-  }
-
-  for (const freeGamer of freeGamers) {
-    matches.push({
-      isFreeGame: true,
-      player: freeGamer,
-    })
-  }
-  return matches
-}
-
-const calculateForbiddenPairings = (participants, history) => {
-  let forbiddenPartners = {}
-  for (const participant of participants) {
-    forbiddenPartners[participant] = new Set([participant])
-  }
-  for (const round of history) {
-    for (const match of round) {
-      if (match.isFreeGame) {
-        continue
-      }
-      for (const team of match.teams) {
-        forbiddenPartners[team[0]].add(team[1])
-        forbiddenPartners[team[1]].add(team[0])
-      }
+      history
+    );
+    const freeGamers = calculateFreeGamers(activeParticipants, history);
+    let pairings;
+    if (history.length == 0) {
+      pairings = drawPairingsForFirstRound(participants, freeGamers);
+    } else {
+      pairings = drawPairings(activeParticipants, forbiddenPairings, [
+        ...freeGamers
+      ]).sort((team) => rankingObject[team[0]] + rankingObject[team[1]]);
     }
-  }
-  return forbiddenPartners
-}
-
-const drawPairings = (participants, forbiddenPairings, freeGamers) => {
-  participants = new Set(participants)
-  const players = setDiff(participants, freeGamers)
-  let pairings = []
-  while (players.size > 0) {
-    const [playerOne] = players
-    players.delete(playerOne)
-    const possiblePartners = setDiff(players, forbiddenPairings[playerOne])
-    if (possiblePartners.size == 0) {
-      // No possible solution with the current drawing, try again from scratch
-      return drawPairings(participants, forbiddenPairings, freeGamers)
+    let matches = [];
+    for (let i = 0; i < pairings.length; i += 2) {
+      matches.push({
+        teams: [pairings[i], pairings[i + 1]],
+        winningTeam: null
+      });
     }
-    const playerTwo = drawRandom(possiblePartners)
-    players.delete(playerTwo)
-    pairings.push([playerOne, playerTwo])
-  }
-  return pairings
-}
-
-const drawPairingsForFirstRound = (participants, freeGamers) => {
-  // This implements the requirement that in the first round, we want to pair
-  // each player from the top half of the list with a player from the bottom
-  // half.
-  //
-  // Here, there is no need to check for forbiddenPairings because we are in
-  // first round
-
-  participants = new Set(participants)
-  const players = [...setDiff(participants, freeGamers)]
-  let pairings = []
-  const breakIndex = players.length / 2
-  const topHalf = players.slice(0, breakIndex)
-  const bottomHalf = players.slice(breakIndex, players.length)
-  for (const topPlayer of topHalf) {
-    const bottomPlayer = popRandom(bottomHalf)
-    pairings.push([topPlayer, bottomPlayer])
-  }
-  return pairings
-}
-
-const calculateFreeGamers = (participants, history) => {
-  // Participants with the lowest ranking who have not yet had a free game will
-  // get a free game.
-  let ranking = calculateRanking(participants, history)
-  const participantCount = participants.length
-  const freeGamesCount = participantCount % 4
-  let freeGamers = new Set([])
-  if (freeGamesCount == 0) {
-    return freeGamers
-  }
-  for (const [player, _] of ranking.reverse()) {
-    if (!playerHadFreeGame(player, history)) {
-      freeGamers.add(player)
+    for (const freeGamer of freeGamers) {
+      matches.push({
+        isFreeGame: true,
+        player: freeGamer
+      });
     }
-    if (freeGamers.size == freeGamesCount) {
-      return freeGamers
+    return matches;
+  };
+  var calculateForbiddenPairings = (participants, history) => {
+    let forbiddenPartners = {};
+    for (const participant of participants) {
+      forbiddenPartners[participant] = /* @__PURE__ */ new Set([participant]);
     }
-  }
-  return freeGamers
-}
-
-const playerHadFreeGame = (player, history) => {
-  for (const round of history) {
-    for (const match of round) {
-      if (!match.isFreeGame) {
-        continue
-      }
-      if (match.player == player) {
-        return true
+    for (const round of history) {
+      for (const match of round) {
+        if ("isFreeGame" in match) {
+          continue;
+        }
+        for (const team of match.teams) {
+          forbiddenPartners[team[0]].add(team[1]);
+          forbiddenPartners[team[1]].add(team[0]);
+        }
       }
     }
-  }
-  return false
-}
-
-const calculatePoints = (participants, history) => {
-  // Returns sorted array of tuple [player, points] buchholz, 2nd-buchholz]
-  let ranking = {}
-  for (const participant of participants) {
-    ranking[participant] = 0
-  }
-  for (const round of history) {
-    if (roundIsOpen(round)) {
-      continue
-    }
-    for (const match of round) {
-      if (match.isFreeGame) {
-        ranking[match.player] += 1
-        continue
+    return forbiddenPartners;
+  };
+  var drawPairings = (participants, forbiddenPairings, freeGamers) => {
+    participants = [...new Set(participants)];
+    const players = setDiff(participants, freeGamers);
+    let pairings = [];
+    while (players.size > 0) {
+      const [playerOne] = players;
+      players.delete(playerOne);
+      const possiblePartners = setDiff(
+        [...players],
+        [...forbiddenPairings[playerOne]]
+      );
+      if (possiblePartners.size == 0) {
+        return drawPairings(participants, forbiddenPairings, freeGamers);
       }
-      for (const winningPlayer of match.teams[match.winningTeam]) {
-        ranking[winningPlayer] += 1
+      const playerTwo = drawRandom(possiblePartners);
+      players.delete(playerTwo);
+      pairings.push([playerOne, playerTwo]);
+    }
+    return pairings;
+  };
+  var drawPairingsForFirstRound = (participants, freeGamers) => {
+    const players = [...setDiff(participants, [...freeGamers])];
+    let pairings = [];
+    const breakIndex = players.length / 2;
+    const topHalf = players.slice(0, breakIndex);
+    const bottomHalf = players.slice(breakIndex, players.length);
+    for (const topPlayer of topHalf) {
+      const bottomPlayer = popRandom(bottomHalf);
+      pairings.push([topPlayer, bottomPlayer]);
+    }
+    return pairings;
+  };
+  var calculateFreeGamers = (participants, history) => {
+    let ranking = calculateRanking(participants, history);
+    const participantCount = participants.length;
+    const freeGamesCount = participantCount % 4;
+    let freeGamers = /* @__PURE__ */ new Set([]);
+    if (freeGamesCount == 0) {
+      return freeGamers;
+    }
+    for (const [player, _] of ranking.reverse()) {
+      if (!playerHadFreeGame(player, history)) {
+        freeGamers.add(player);
+      }
+      if (freeGamers.size == freeGamesCount) {
+        return freeGamers;
       }
     }
-  }
-  return ranking
-}
-
-const calculateBuchholz = (points, history) => {
-  const buchholz = {}
-  for (const player of Object.keys(points)) {
-    buchholz[player] = 0
-  }
-
-  for (const round of history) {
-    if (roundIsOpen(round)) {
-      continue
-    }
-    for (const match of round) {
-      if (match.isFreeGame) {
-        continue
+    return freeGamers;
+  };
+  var playerHadFreeGame = (player, history) => {
+    for (const round of history) {
+      for (const match of round) {
+        if (!("isFreeGame" in match)) {
+          continue;
+        }
+        if (match.player == player) {
+          return true;
+        }
       }
-      const teams = match.teams
-      /* Subtracting points of partner */
-      buchholz[teams[0][0]] -= points[teams[0][1]]
-      buchholz[teams[0][1]] -= points[teams[0][0]]
-      buchholz[teams[1][0]] -= points[teams[1][1]]
-      buchholz[teams[1][1]] -= points[teams[1][0]]
-
-      /* Adding points of opponents */
-      buchholz[teams[0][0]] += points[teams[1][0]] + points[teams[1][1]]
-      buchholz[teams[0][1]] += points[teams[1][0]] + points[teams[1][1]]
-      buchholz[teams[1][0]] += points[teams[0][0]] + points[teams[0][1]]
-      buchholz[teams[1][1]] += points[teams[0][0]] + points[teams[0][1]]
     }
-  }
-  return buchholz
-}
-
-const calculateRanking = (participants, history) => {
-  // Returns sorted array of tuples [player, points, buchholz]
-  let points = calculatePoints(participants, history)
-  let buchholz = calculateBuchholz(points, history)
-  let ranking = participants.map((participant) => [
-    participant,
-    points[participant],
-    buchholz[participant],
-  ])
-  return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2])
-}
-
-const resetNextRound = (history, setting, roundCount) => {
-  if (typeof history === 'undefined') {
-    history = load('history')
-  }
-  if (typeof setting === 'undefined') {
-    setting = load('setting')
-  }
-  if (typeof roundCount === 'undefined') {
-    roundCount = load('roundCount')
-  }
-  history.pop()
-  dump('history', history)
-  setNextRound(history, setting, roundCount)
-}
-
-const setNextRound = (history, setting, roundCount) => {
-  if (calculateCurrentRound() == roundCount) return
-  dump('history', [...history, determineNextRound(setting, history)])
-}
-
-/* Exporting functions for testing */
-if (typeof exports !== 'undefined') {
-  exports.calculateRanking = calculateRanking
-  exports.calculatePoints = calculatePoints
-  exports.calculateBuchholz = calculateBuchholz
-  exports.tournamentHasStarted = tournamentHasStarted
-  exports.playerHadFreeGame = playerHadFreeGame
-  exports.calculateFreeGamers = calculateFreeGamers
-  exports.determineNextRound = determineNextRound
-}
-window.onload = () => render()
-
-const STORAGE_KEYS = [
-  'history',
-  'participants',
-  'roundCount',
-  'setting',
-  'title',
-]
-
-const render = () => {
-  destroyRoundNavigation()
-  destroyRoundView()
-
-  const participants = load('participants') || []
-  const history = load('history') || []
-  const roundCount = load('roundCount')
-  const title = load('title')
-
-  createHeader()
-
-  if (tournamentHasStarted(history)) {
-    const setting = load('setting') || []
-
-    createRankingTable(setting, history)
-    createRoundNavigation(roundCount)
-    createRoundView(calculateCurrentRound())
-    return
-  }
-
-  createDataForm()
-  dump('history', [])
-
-  title && domWrite('input-title', load('title'))
-  participants &&
-    domWrite('input-participants', participants.join('\n')) &&
-    onParticipantInputChange()
-  roundCount &&
-    domWrite('input-round-count', roundCount) &&
-    createRoundNavigation(roundCount)
-}
-
-const startTournament = () => {
-  const history = load('history') || []
-
-  if (tournamentHasStarted(history)) return
-
-  const participants = readParticipants()
-  const duplicates = findDuplicates(participants)
-  if (isTruthy(duplicates)) {
-    createAlert(`
-      Die folgenden Einträge tauchen doppelt auf:
-
-          ${duplicates.join('\n')}
-
-      Bitte ändere die Einträge, um sie zu vereindeutigen.
-    `)
-    return
-  }
-
-  const setting = [...participants]
-  const roundCount = readRoundCount()
-  dump('participants', participants)
-  dump('setting', setting)
-  dump('roundCount', roundCount)
-  dump('title', readTitle())
-  dump('history', history)
-
-  setNextRound(history, setting, roundCount)
-  render()
-}
-
-const createTournament = () => {
-  storeTournament()
-  for (const key of STORAGE_KEYS) {
-    erase(key)
-  }
-  render()
-}
-
-const storeTournament = () => {
-  const history = load('history')
-  if (!tournamentHasStarted(history)) return
-
-  const title = load('title')
-  const tournament = {
-    title: title,
-    history: load('history'),
-    participants: load('participants'),
-    setting: load('setting'),
-    roundCount: load('roundCount'),
-  }
-  let storeValue = load('savedTournaments') || {}
-  storeValue[title] = tournament
-  dump('savedTournaments', storeValue)
-}
-
-const openTournament = (title) => {
-  storeTournament()
-
-  const tournament = load('savedTournaments')[title]
-  for (const key of STORAGE_KEYS) {
-    dump(key, tournament[key])
-  }
-  render()
-}
-
-const downloadJSON = (data, filename) => {
-  const jsonString = JSON.stringify(data, null, 2)
-  const blob = new Blob([jsonString], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-const exportTournament = () => {
-  const title = load('title')
-  const data = {}
-
-  for (const key of STORAGE_KEYS) {
-    const value = load(key)
-    if (value !== null) {
-      data[key] = value
+    return false;
+  };
+  var calculatePoints = (participants, history) => {
+    let ranking = {};
+    for (const participant of participants) {
+      ranking[participant] = 0;
     }
-  }
-  downloadJSON(data, title + '.json')
-}
-
-const openImportFileDialogue = () => {
-  document.getElementById('import-tournament-file-input').click()
-}
-
-const importTournament = (event) => {
-  const file = event.target.files[0]
-
-  if (!file) {
-    return
-  }
-
-  const reader = new FileReader()
-  reader.onload = function (e) {
-    const data = JSON.parse(e.target.result)
-
-    for (const key of Object.keys(data)) {
-      const value = data[key]
-      dump(key, value)
+    for (const round of history) {
+      if (roundIsOpen(round)) {
+        continue;
+      }
+      for (const match of round) {
+        if ("isFreeGame" in match) {
+          ranking[match.player] += 1;
+          continue;
+        }
+        for (const winningPlayer of match.teams[match.winningTeam]) {
+          ranking[winningPlayer] += 1;
+        }
+      }
     }
-    render()
-  }
-  reader.readAsText(file)
-}
-const freeGameDom = (match) =>
-  domFromHTML(`
-    <div class="match freegame flex">
-      <div class="team">FREISPIEL</div>
-      <div class="team">${match.player}</div>
-    </div>
-  `)
+    return ranking;
+  };
+  var calculateBuchholz = (points, history) => {
+    const buchholz = {};
+    for (const player of Object.keys(points)) {
+      buchholz[player] = 0;
+    }
+    for (const round of history) {
+      if (roundIsOpen(round)) {
+        continue;
+      }
+      for (const match of round) {
+        if ("isFreeGame" in match) {
+          continue;
+        }
+        const teams = match.teams;
+        buchholz[teams[0][0]] -= points[teams[0][1]];
+        buchholz[teams[0][1]] -= points[teams[0][0]];
+        buchholz[teams[1][0]] -= points[teams[1][1]];
+        buchholz[teams[1][1]] -= points[teams[1][0]];
+        buchholz[teams[0][0]] += points[teams[1][0]] + points[teams[1][1]];
+        buchholz[teams[0][1]] += points[teams[1][0]] + points[teams[1][1]];
+        buchholz[teams[1][0]] += points[teams[0][0]] + points[teams[0][1]];
+        buchholz[teams[1][1]] += points[teams[0][0]] + points[teams[0][1]];
+      }
+    }
+    return buchholz;
+  };
+  var calculateRanking = (participants, history) => {
+    let points = calculatePoints(participants, history);
+    let buchholz = calculateBuchholz(points, history);
+    let ranking = participants.map((participant) => [
+      participant,
+      points[participant],
+      buchholz[participant]
+    ]);
+    return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2]);
+  };
+  var resetNextRound = (history, setting, roundCount) => {
+    if (typeof history === "undefined") {
+      history = load("history");
+    }
+    if (typeof setting === "undefined") {
+      setting = load("setting");
+    }
+    if (typeof roundCount === "undefined") {
+      roundCount = load("roundCount");
+    }
+    history.pop();
+    dump("history", history);
+    setNextRound(history, setting, roundCount);
+  };
+  var setNextRound = (history, setting, roundCount) => {
+    if (calculateCurrentRound() == roundCount) return;
+    const newHistory = [...history, determineNextRound(setting, history)];
+    dump("history", newHistory);
+  };
 
-const resultDom = (match, editable) => {
-  const dom = domFromHTML(`<div class="result"></div>`)
+  // app/components/alert.ts
+  var createAlert = (message, callback = null) => {
+    message = message.trim();
+    const id = randomId();
+    if (callback) {
+      const dom = htmlElement(
+        "div",
+        `
+      <div id=${id} class="alert">
+        <div class="alert-body">
+          <div class="alert-message">
+            ${message}
+          </div>
+          <div class="flex">
+            <button
+              id="action-confirm-alert-${id}"
+              class="btn btn-alert"
+            >
+              Ja
+            </button>
+            <button
+              id="action-cancel-alert-${id}"
+              class="btn btn-action right"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+      );
+      document.getElementById("universe").appendChild(dom);
+      document.getElementById(`action-confirm-alert-${id}`).addEventListener("click", () => {
+        destroyAlert(id);
+        callback();
+      });
+      document.getElementById(`action-cancel-alert-${id}`).addEventListener("click", () => {
+        destroyAlert(id);
+      });
+    } else {
+      const dom = htmlElement(
+        "div",
+        `
+      <div id=${id} class="alert">
+        <div class="alert-body">
+          <div class="alert-message">
+            ${message}
+          </div>
+          <div class="flex">
+            <button
+              id="action-close-alert-${id}"
+              class="btn btn-action right"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+      );
+      document.getElementById("universe").appendChild(dom);
+      document.getElementById(`action-close-alert-${id}`).addEventListener("click", () => destroyAlert(id));
+      document.getElementById(id).addEventListener("click", (e) => {
+        if (e.target.id === id) destroyAlert(id);
+      });
+    }
+  };
+  var destroyAlert = (id) => {
+    document.getElementById(id)?.remove();
+  };
 
-  const teamOneResultDom = domFromHTML(`
-    <button class="btn btn-result">${
-      match.winningTeam == 0 ? 1 : match.winningTeam === null ? '?' : 0
-    }</button>
-  `)
-
-  const teamTwoResultDom = domFromHTML(`
-    <button class="btn btn-result second">${
-      match.winningTeam == 1 ? 1 : match.winningTeam === null ? '?' : 0
-    }</button>
-  `)
-
-  if (editable) {
-    teamOneResultDom.addEventListener('click', () => {
-      setWinner(teamOneResultDom, teamTwoResultDom)
-    })
-    teamTwoResultDom.addEventListener('click', () => {
-      setWinner(teamTwoResultDom, teamOneResultDom)
-    })
-  }
-
-  dom.appendChild(teamOneResultDom)
-  dom.appendChild(domFromHTML(`<span class="conjunctor">:</span>`))
-  dom.appendChild(teamTwoResultDom)
-
-  return dom
-}
-
-const setWinner = (thisDom, thatDom) => {
-  thisDom.innerHTML = 1
-  thatDom.innerHTML = 0
-  thisDom.classList.add('set')
-  thatDom.classList.add('set')
-}
-
-const regularMatchDom = (match, editable) => {
-  const teamOne = domFromHTML(`
-    <div class="team">
-      <div class="player">${match.teams[0][0]}</div>
-      <div class="player">${match.teams[0][1]}</div>
-    </div>
-  `)
-  const teamTwo = domFromHTML(`
-    <div class="team">
-      <div class="player">${match.teams[1][0]}</div>
-      <div class="player">${match.teams[1][1]}</div>
-    </div>
-  `)
-
-  const result = resultDom(match, editable)
-
-  const dom = domFromHTML(`<div class="match"></div>`)
-
-  dom.appendChild(teamOne)
-  dom.appendChild(result)
-  dom.appendChild(teamTwo)
-  return dom
-}
-
-const createRoundView = (focusedRound) => {
-  destroyRoundView()
-  const history = load('history')
-
-  if (!isTruthy(history)) return
-
-  const roundCount = load('roundCount')
-  const currentRound = calculateCurrentRound()
-  const tournamentIsOver = tournamentHasFinished(history, roundCount)
-  const tournamentIsNotOverYet = !tournamentIsOver
-
-  const dom = domFromHTML(`<div id="round-view" class="page border"></div>`)
-
-  const roundIsCurrent = focusedRound == currentRound
-  const roundIsOpen = roundIsCurrent && tournamentIsNotOverYet
-  const roundIsBeingCorrected = load('correctingRound') == focusedRound
-  const roundIsEditable = roundIsOpen || roundIsBeingCorrected
-
-  roundIsEditable
-    ? dom.classList.add('editable-round')
-    : dom.classList.add('fixed-round')
-
-  const round = history[focusedRound - 1]
-
-  let heading = domFromHTML(`
-    <div class="flex"><h2 class="center">Runde ${focusedRound}</h2></div
-  `)
-  let matchDoms = []
-  for (const match of round) {
-    match.isFreeGame
-      ? matchDoms.push(freeGameDom(match))
-      : matchDoms.push(regularMatchDom(match, roundIsEditable))
-  }
-  dom.replaceChildren(heading, ...matchDoms)
-
-  if (roundIsEditable) {
-    const closeButton = domFromHTML(`
+  // app/components/dataForm.ts
+  var createDataForm = () => {
+    const dataForm = htmlElement(
+      "div",
+      `
+    <div id="data-form">
+      <h1>Turnierdaten</h1>
       <div class="flex">
-        <button
-          id="action-fix-round"
-          class="btn btn-action right"
-        >
-          Runde Festschreiben
-        </button>
-      </div>
-    `)
-    closeButton.addEventListener('click', () => {
-      closeRound(focusedRound)
-    })
-    dom.appendChild(closeButton)
-  } else {
-    const reOpenButton = domFromHTML(`
-      <div class="flex">
-        <button
-          id="action-attempt-reopen-round"
-          class="btn btn-alert right"
-        >
-          Fehler korrigieren
-        </button>
-      </div>
-    `)
-    reOpenButton.addEventListener('click', () =>
-      attemptReopenRound(focusedRound)
-    )
-    dom.appendChild(reOpenButton)
-  }
-
-  document.getElementById('round-nav')?.after(dom)
-  highlightRoundNavItem(focusedRound)
-}
-
-const destroyRoundView = () => document.getElementById('round-view')?.remove()
-
-const closeRound = (roundNumber) => {
-  const history = load('history')
-  const setting = load('setting')
-  const roundCount = load('roundCount')
-  const correctingThisRound = load('correctingRound') != undefined
-
-  const round = history[roundNumber - 1]
-  let index = 0
-  for (const result of document.querySelectorAll(
-    '.match .result .btn-result.second'
-  )) {
-    if (result.innerHTML == '?') {
-      createAlert(`
-        Die Runde kann noch nicht festgeschrieben werden,
-        weil noch Ergebnisse fehlen.
-      `)
-      return
-    }
-    result.innerHTML == '1'
-      ? (round[index].winningTeam = 1)
-      : (round[index].winningTeam = 0)
-    index++
-  }
-
-  history[roundNumber - 1] = round
-  dump('history', history)
-  if (correctingThisRound) {
-    erase('correctingRound')
-    resetNextRound(history, setting, roundCount)
-  }
-  setNextRound(history, setting, roundCount)
-  render()
-}
-
-const attemptReopenRound = (roundNumber) => {
-  // reopening the round is safe if all rounds are closed, or if this is the
-  // last round. Else, changing results would lead to recalculating the setting
-  // of the open round. This would be a problem if the open round
-  // already started (but has not been closed yet). That is why the user cannot
-  // reopen the the round directly, but has to confirm their intent for the open
-  // round to be reset.
-  const history = load('history')
-  const roundCount = load('roundCount')
-  if (tournamentHasFinished(history, roundCount)) {
-    reopenRound(roundNumber)
-    return
-  }
-  const currentRoundNumber = calculateCurrentRound()
-  createReopenRoundConfirmation(roundNumber, currentRoundNumber)
-}
-const highlightRoundNavItem = (roundNumber) => {
-  let items = document.getElementsByClassName('nav-round')
-  for (let index = 1; index <= items.length; index++) {
-    const item = items[index - 1]
-    item.classList.remove('focus')
-    if (index == roundNumber) {
-      item.classList.add('focus')
-    }
-  }
-}
-
-const createRoundNavigation = (focusedRound) => {
-  const currentRound = calculateCurrentRound()
-  let items = []
-  for (let round = 1; round <= focusedRound; round++) {
-    let navItem = domFromHTML(`
-      <div
-        class="
-        nav-round
-        ${currentRound == round ? 'current-round' : ''}
-        ${currentRound < round ? 'future-round inactive' : ''}
-        "
-      >
-        Runde ${round}
-      </div>
-    `)
-    round <= currentRound &&
-      navItem.addEventListener('click', () => {
-        createRoundView(round)
-      })
-    items.push(navItem)
-  }
-  destroyRoundNavigation()
-  const dom = domFromHTML(`<div id="round-nav"></div>`)
-  dom.replaceChildren(...items)
-  document.getElementById('tournament-data').after(dom)
-}
-
-const destroyRoundNavigation = () =>
-  document.getElementById('round-nav')?.remove()
-const createReopenRoundConfirmation = (roundNumber, openRoundNumber) => {
-  const dom = domFromHTML(`
-    <div id="reopen-round-confirmation">
-      <div class="confirmation-body">
-        <div class="confirmation-message">
-          Die Runde ${openRoundNumber} ist noch nicht festgeschrieben.
-
-          Wenn du die Ergebnisse von Runde ${roundNumber} korrigierst, wird die
-          Runde ${openRoundNumber} neu gesetzt. Falls die Runde
-          ${openRoundNumber} schon begonnen hat, korrigiere die Ergebnisse von
-          Runde ${roundNumber} erst dann, wenn Runde ${openRoundNumber} beendet
-          und festgeschrieben ist.
+        <div class="flex-grow">
+          <div class="label">Name</div>
+          <input id="input-title" class="input" type="text" />
         </div>
 
-        <div class="flex">
-          <button
-            id="action-reopen-round"
-            class="btn btn-alert"
-          >
-            Ich möchte Runde ${roundNumber} korrigeren, Runde ${openRoundNumber}
-            wird neu gesetzt.
-          </button>
-
-          <button
-            id="action-abort-reopen-round"
-            class="btn right"
-          >
-            Abbrechen
-          </button>
+        <div class="right">
+          <div class="label">Runden</div>
+          <input
+            id="input-round-count"
+            class="input"
+            type="number"
+            value="5"
+          />
         </div>
+      </div>
 
+      <div class="label">Setzung</div>
+      <textarea id="input-participants" rows=8 type="text" class="input"></textarea>
+
+      <div class="flex">
+        <button class="btn btn-action right" id="action-start-tournament">
+          Turnier Starten
+        </button>
       </div>
     </div>
-  `)
+  `
+    );
+    document.getElementById("tournament-data").replaceChildren(dataForm);
+    document.getElementById("action-start-tournament").addEventListener("click", startTournament);
+    document.getElementById("input-participants").addEventListener("keyup", (event) => {
+      if (event.key == "Enter") {
+        onParticipantInputChange();
+      }
+    });
+  };
+  var onParticipantInputChange = () => {
+    const input = document.getElementById(
+      "input-participants"
+    );
+    let participants = readParticipants();
+    dump("participants", participants);
+    input.rows = Math.max(input.rows, participants.length + 2);
+  };
+  var readParticipants = () => readFromInputField("input-participants").split("\n").filter((line) => line.trim());
+  var readTitle = () => readFromInputField("input-title");
+  var readRoundCount = () => Number(readFromInputField("input-round-count"));
 
-  document.getElementById('universe').appendChild(dom)
-
-  document
-    .getElementById('action-reopen-round')
-    .addEventListener('click', () => {
-      reopenRound(roundNumber)
-    })
-  document
-    .getElementById('action-abort-reopen-round')
-    .addEventListener('click', destroyReopenRoundConfirmation)
-}
-
-const destroyReopenRoundConfirmation = () => {
-  document.getElementById('reopen-round-confirmation')?.remove()
-}
-
-const reopenRound = (roundNumber) => {
-  destroyReopenRoundConfirmation()
-  dump('correctingRound', roundNumber)
-  createRoundView(roundNumber)
-}
-const titleDom = (title) =>
-  domFromHTML(`
-    <div class="flex"><h1 class="center">${title}</h1></div>
-  `)
-
-const headingDom = (round, tournamentIsOver) =>
-  tournamentIsOver
-    ? domFromHTML(`<div class=flex><h2 class="center">Endstand</h2></div>`)
-    : domFromHTML(`
-      <div class=flex>
-        <h2 class="center">Zwischenstand nach Runde ${round}</h2>
-      </div>
-    `)
-
-const managePlayersButtonDom = () => {
-  const dom = domFromHTML(`
-    <div class="flex">
-      <button id="action-manage-players" class="btn btn-action center">
-        Spieler verwalten
-      </button>
-    </div>
-  `)
-
-  dom
-    .querySelector('#action-manage-players')
-    .addEventListener('click', createManagePlayersDialog)
-
-  return dom
-}
-
-const tableDom = (rankingGroups, departedPlayers) => {
-  const dom = domFromHTML(`<table class="result-table"></table>`)
-  const rows = []
-  rows.push(
-    domFromHTML(`
-      <tr>
-        <th>Platz</th>
-        <th>Name</th>
-        <th>Punkte</th>
-        <th>Buchholz</th>
-      </tr>
-    `)
-  )
-  let rank = 1
-  let dark = true
-  for (const group of rankingGroups) {
-    for (const [name, points, buchholz] of group) {
-      const isDeparted = departedPlayers && departedPlayers[name] !== undefined
-      const departedText = isDeparted
-        ? ` (nach Runde ${departedPlayers[name]})`
-        : ''
-
-      rows.push(
-        domFromHTML(`
-          <tr class="${dark ? 'dark' : 'bright'} ${
-            isDeparted ? 'departed' : ''
-          }">
-            <td>${rank}</td>
-            <td>${name}${departedText}</td>
-            <td>${points}</td>
-            <td>${buchholz}</td>
-          </tr>
-        `)
-      )
+  // app/components/openDialog.ts
+  var createOpenDialog = () => {
+    destroyOpenDialog();
+    const tournaments = Object.keys(load("savedTournaments") || {});
+    if (!isTruthy(tournaments)) {
+      return;
     }
-    dark = !dark
-    rank += group.length
-  }
-  dom.replaceChildren(...rows)
-  return dom
-}
-
-const groupRankingByPointsAndBuchholz = (ranking) => {
-  return groupBy(
-    ranking,
-    (
-      [thisName, thisPoints, thisBuchholz],
-      [thatName, thatPoints, thatBuchholz]
-    ) => thisPoints == thatPoints && thisBuchholz == thatBuchholz
-  )
-}
-
-const createRankingTable = (participants, history) => {
-  if (!participants) return
-
-  const ranking = calculateRanking(participants, history)
-  const groups = groupRankingByPointsAndBuchholz(ranking)
-  const title = load('title')
-  const roundCount = load('roundCount')
-  const currentRound = calculateCurrentRound()
-  const departedPlayers = load('departedPlayers') || {}
-
-  let rankedRound = 0
-  if (currentRound) {
-    rankedRound = roundIsOpen(history[currentRound - 1])
-      ? currentRound - 1
-      : currentRound
-  }
-
-  const dom = domFromHTML(`<div id="ranking-table"></div>`)
-
-  const tournamentFinished = tournamentHasFinished(history, roundCount)
-  const showManageButton =
-    tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount)
-
-  const elements = [
-    titleDom(title),
-    headingDom(rankedRound, tournamentFinished),
-    ...(showManageButton ? [managePlayersButtonDom()] : []),
-    tableDom(groups, departedPlayers),
-  ]
-
-  dom.replaceChildren(...elements)
-  document.getElementById('tournament-data').replaceChildren(dom)
-}
-const createOpenDialog = () => {
-  destroyOpenDialog()
-  const tournaments = Object.keys(load('savedTournaments') || {})
-  if (!isTruthy(tournaments)) {
-    return
-  }
-  const dialog = domFromHTML(`
+    const dialog = htmlElement(
+      "div",
+      `
     <div id="open-dialog" class="dropdown-dialog"></div>
-  `)
-  for (const tournament of tournaments) {
-    const link = createOpenLink(tournament)
-    dialog.appendChild(link)
-  }
-  const section = document.getElementById('open-tournament-section')
-  section.appendChild(dialog)
-
-  window.addEventListener(
-    'click',
-    (event) =>
-      document
-        .getElementById('open-tournament-section')
-        .contains(event.target) || destroyOpenDialog()
-  )
-}
-
-const destroyOpenDialog = () => document.getElementById('open-dialog')?.remove()
-
-const createOpenLink = (tournamentKey) => {
-  const link = domFromHTML(`
+  `
+    );
+    for (const tournament of tournaments) {
+      const link = createOpenLink(tournament);
+      dialog.appendChild(link);
+    }
+    const section = document.getElementById(
+      "open-tournament-section"
+    );
+    section.appendChild(dialog);
+    window.addEventListener(
+      "click",
+      (event) => document.getElementById("open-tournament-section").contains(event.target) || destroyOpenDialog()
+    );
+  };
+  var destroyOpenDialog = () => document.getElementById("open-dialog")?.remove();
+  var createOpenLink = (tournamentKey) => {
+    const link = htmlElement(
+      "div",
+      `
     <div class="dropdown-dialog-row action-open-tournament">
       ${tournamentKey}
     </div>
-  `)
-  link.addEventListener('click', () => {
-    openTournament(tournamentKey)
-    destroyOpenDialog()
-  })
+  `
+    );
+    link.addEventListener("click", () => {
+      openTournament(tournamentKey);
+      destroyOpenDialog();
+    });
+    return link;
+  };
 
-  return link
-}
-const createManagePlayersDialog = () => {
-  const participants = load('participants') || []
-  const departedPlayers = load('departedPlayers') || {}
-  const currentRound = calculateCurrentRound()
-
-  // Get active players (not yet departed)
-  const activePlayers = participants.filter(
-    (player) => !departedPlayers[player]
-  )
-
-  if (activePlayers.length === 0) {
-    createAlert('Alle Spieler haben das Turnier bereits verlassen.')
-    return
-  }
-
-  const playerRows = activePlayers
-    .map((player) => {
-      const ranking = calculateRanking(participants, load('history') || [])
-      const playerRanking = ranking.find(([name]) => name === player)
-      const points = playerRanking ? playerRanking[1] : 0
-
-      return `
-      <div class="manage-player-row">
-        <div class="player-info">
-          <div class="player-name">${player}</div>
-          <div class="player-points">${points} Punkte</div>
-        </div>
-        <button class="btn btn-alert remove-player-btn" data-player="${player}">
-          Entfernen
-        </button>
-      </div>
-    `
-    })
-    .join('')
-
-  const dom = domFromHTML(`
-    <div id="manage-players-dialog" class="alert">
-      <div class="alert-body manage-players-body">
-        <h2>Spieler verwalten</h2>
-        <div class="manage-players-subtitle">
-          Entfernung nach Runde ${currentRound - 1}
-        </div>
-
-        <div class="manage-players-list">
-          ${playerRows}
-        </div>
-
-        <div class="flex">
-          <button id="action-close-manage-players" class="btn btn-action right">
-            Schließen
-          </button>
-        </div>
-      </div>
-    </div>
-  `)
-
-  document.getElementById('universe').appendChild(dom)
-
-  // Add event listeners for remove buttons
-  dom.querySelectorAll('.remove-player-btn').forEach((button) => {
-    button.addEventListener('click', (e) => {
-      const playerName = e.target.dataset.player
-      confirmRemovePlayer(playerName, currentRound - 1)
-    })
-  })
-
-  // Close dialog listener
-  dom
-    .querySelector('#action-close-manage-players')
-    .addEventListener('click', destroyManagePlayersDialog)
-}
-
-const destroyManagePlayersDialog = () => {
-  document.getElementById('manage-players-dialog')?.remove()
-}
-
-const confirmRemovePlayer = (playerName, afterRound) => {
-  createAlert(
-    `
-    Spieler "${playerName}" nach Runde ${afterRound} entfernen?
-
-    Diese Aktion kann nicht rückgängig gemacht werden.
-    Nach dieser Aktion wird die gegenwärtig offene Runde neu gesetzt.
-    Stell sicher, dass die Runde noch nicht begonnen hat.
-    Entferne den Spieler erst, wenn die Runde abgeschlossen ist.
-  `,
-    () => removePlayer(playerName, afterRound)
-  )
-}
-
-const removePlayer = (playerName, afterRound) => {
-  const departedPlayers = load('departedPlayers') || {}
-  departedPlayers[playerName] = afterRound
-  dump('departedPlayers', departedPlayers)
-  destroyManagePlayersDialog()
-  resetNextRound()
-  render() // Re-render to show updated rankings
-}
-const createHeader = () => {
-  const dom = domFromHTML(`
+  // app/components/header.ts
+  var createHeader = () => {
+    const dom = htmlElement(
+      "div",
+      `
     <div id="header" class="page">
 
       <div class="left-group">
@@ -1516,7 +908,7 @@ const createHeader = () => {
                 id="action-open-tournament"
                 class="btn btn-action btn-yellow width-100"
               >
-                Öffnen
+                \xD6ffnen
               </button>
             </div>
           </div>
@@ -1547,169 +939,609 @@ const createHeader = () => {
       </div>
 
     </div>
-  `)
-  document.getElementById('header').replaceWith(dom)
+  `
+    );
+    document.getElementById("header").replaceWith(dom);
+    document.getElementById("action-create-tournament").addEventListener("click", createTournament);
+    document.getElementById("open-tournament-section").addEventListener("click", createOpenDialog);
+    document.getElementById("export-tournament-section").addEventListener("click", exportTournament);
+    document.getElementById("import-tournament-section").addEventListener("click", openImportFileDialogue);
+    document.getElementById("import-tournament-file-input").addEventListener("change", importTournament);
+  };
 
-  document
-    .getElementById('action-create-tournament')
-    .addEventListener('click', createTournament)
-
-  document
-    .getElementById('open-tournament-section')
-    .addEventListener('click', createOpenDialog)
-
-  document
-    .getElementById('export-tournament-section')
-    .addEventListener('click', exportTournament)
-
-  document
-    .getElementById('import-tournament-section')
-    .addEventListener('click', openImportFileDialogue)
-
-  document
-    .getElementById('import-tournament-file-input')
-    .addEventListener('change', importTournament)
-}
-const createDataForm = () => {
-  const dataForm = domFromHTML(`
-    <div id="data-form">
-      <h1>Turnierdaten</h1>
-      <div class="flex">
-        <div class="flex-grow">
-          <div class="label">Name</div>
-          <input id="input-title" class="input" type="text" />
-        </div>
-
-        <div class="right">
-          <div class="label">Runden</div>
-          <input
-            id="input-round-count"
-            class="input"
-            type="number"
-            value="5"
-          />
-        </div>
+  // app/components/roundNavigation.ts
+  var highlightRoundNavItem = (roundNumber) => {
+    let items = document.getElementsByClassName("nav-round");
+    for (let index = 1; index <= items.length; index++) {
+      const item = items[index - 1];
+      item.classList.remove("focus");
+      if (index == roundNumber) {
+        item.classList.add("focus");
+      }
+    }
+  };
+  var createRoundNavigation = (focusedRound) => {
+    const currentRound = calculateCurrentRound();
+    let items = [];
+    for (let round = 1; round <= focusedRound; round++) {
+      let navItem = htmlElement(
+        "div",
+        `
+      <div
+        class="
+        nav-round
+        ${currentRound == round ? "current-round" : ""}
+        ${currentRound < round ? "future-round inactive" : ""}
+        "
+      >
+        Runde ${round}
       </div>
+    `
+      );
+      round <= currentRound && navItem.addEventListener("click", () => {
+        createRoundView(round);
+      });
+      items.push(navItem);
+    }
+    destroyRoundNavigation();
+    const dom = htmlElement("div", `<div id="round-nav"></div>`);
+    dom.replaceChildren(...items);
+    document.getElementById("tournament-data").after(dom);
+  };
+  var destroyRoundNavigation = () => document.getElementById("round-nav")?.remove();
 
-      <div class="label">Setzung</div>
-      <textarea id="input-participants" rows=8 type="text" class="input"></textarea>
+  // app/components/reopenRoundConfirmation.ts
+  var createReopenRoundConfirmation = (roundNumber, openRoundNumber) => {
+    const dom = htmlElement(
+      "div",
+      `
+    <div id="reopen-round-confirmation">
+      <div class="confirmation-body">
+        <div class="confirmation-message">
+          Die Runde ${openRoundNumber} ist noch nicht festgeschrieben.
 
-      <div class="flex">
-        <button class="btn btn-action right" id="action-start-tournament">
-          Turnier Starten
-        </button>
+          Wenn du die Ergebnisse von Runde ${roundNumber} korrigierst, wird die
+          Runde ${openRoundNumber} neu gesetzt. Falls die Runde
+          ${openRoundNumber} schon begonnen hat, korrigiere die Ergebnisse von
+          Runde ${roundNumber} erst dann, wenn Runde ${openRoundNumber} beendet
+          und festgeschrieben ist.
+        </div>
+
+        <div class="flex">
+          <button
+            id="action-reopen-round"
+            class="btn btn-alert"
+          >
+            Ich m\xF6chte Runde ${roundNumber} korrigeren, Runde ${openRoundNumber}
+            wird neu gesetzt.
+          </button>
+
+          <button
+            id="action-abort-reopen-round"
+            class="btn right"
+          >
+            Abbrechen
+          </button>
+        </div>
+
       </div>
     </div>
-  `)
-  document.getElementById('tournament-data').replaceChildren(dataForm)
+  `
+    );
+    document.getElementById("universe").appendChild(dom);
+    document.getElementById("action-reopen-round").addEventListener("click", () => {
+      reopenRound(roundNumber);
+    });
+    document.getElementById("action-abort-reopen-round").addEventListener("click", destroyReopenRoundConfirmation);
+  };
+  var destroyReopenRoundConfirmation = () => {
+    document.getElementById("reopen-round-confirmation")?.remove();
+  };
+  var reopenRound = (roundNumber) => {
+    destroyReopenRoundConfirmation();
+    dump("correctingRound", roundNumber);
+    createRoundView(roundNumber);
+  };
 
-  document
-    .getElementById('action-start-tournament')
-    .addEventListener('click', startTournament)
-
-  document
-    .getElementById('input-participants')
-    ?.addEventListener('keyup', (event) => {
-      if (event.key == 'Enter') {
-        onParticipantInputChange()
+  // app/components/roundView.ts
+  var freeGameDom = (match) => htmlElement(
+    "div",
+    `
+    <div class="match freegame flex">
+      <div class="team">FREISPIEL</div>
+      <div class="team">${match.player}</div>
+    </div>
+  `
+  );
+  var resultDom = (match, editable) => {
+    const dom = htmlElement("div", `<div class="result"></div>`);
+    const teamOneResultDom = htmlElement(
+      "button",
+      `
+    <button class="btn btn-result">${match.winningTeam == 0 ? 1 : match.winningTeam === null ? "?" : 0}</button>
+  `
+    );
+    const teamTwoResultDom = htmlElement(
+      "button",
+      `
+    <button class="btn btn-result second">${match.winningTeam == 1 ? 1 : match.winningTeam === null ? "?" : 0}</button>
+  `
+    );
+    if (editable) {
+      teamOneResultDom.addEventListener("click", () => {
+        setWinner(teamOneResultDom, teamTwoResultDom);
+      });
+      teamTwoResultDom.addEventListener("click", () => {
+        setWinner(teamTwoResultDom, teamOneResultDom);
+      });
+    }
+    dom.appendChild(teamOneResultDom);
+    dom.appendChild(htmlElement("span", `<span class="conjunctor">:</span>`));
+    dom.appendChild(teamTwoResultDom);
+    return dom;
+  };
+  var setWinner = (thisDom, thatDom) => {
+    thisDom.innerHTML = "1";
+    thatDom.innerHTML = "0";
+    thisDom.classList.add("set");
+    thatDom.classList.add("set");
+  };
+  var regularMatchDom = (match, editable) => {
+    const teamOne = htmlElement(
+      "div",
+      `
+    <div class="team">
+      <div class="player">${match.teams[0][0]}</div>
+      <div class="player">${match.teams[0][1]}</div>
+    </div>
+  `
+    );
+    const teamTwo = htmlElement(
+      "div",
+      `
+    <div class="team">
+      <div class="player">${match.teams[1][0]}</div>
+      <div class="player">${match.teams[1][1]}</div>
+    </div>
+  `
+    );
+    const result = resultDom(match, editable);
+    const dom = htmlElement("div", `<div class="match"></div>`);
+    dom.appendChild(teamOne);
+    dom.appendChild(result);
+    dom.appendChild(teamTwo);
+    return dom;
+  };
+  var createRoundView = (focusedRound) => {
+    destroyRoundView();
+    const history = load("history");
+    if (!isTruthy(history)) return;
+    const roundCount = load("roundCount");
+    const currentRound = calculateCurrentRound();
+    const tournamentIsOver = tournamentHasFinished(history, roundCount);
+    const tournamentIsNotOverYet = !tournamentIsOver;
+    const dom = htmlElement(
+      "div",
+      `<div id="round-view" class="page border"></div>`
+    );
+    const roundIsCurrent = focusedRound == currentRound;
+    const roundIsOpen2 = roundIsCurrent && tournamentIsNotOverYet;
+    const roundIsBeingCorrected = load("correctingRound") == focusedRound;
+    const roundIsEditable = roundIsOpen2 || roundIsBeingCorrected;
+    roundIsEditable ? dom.classList.add("editable-round") : dom.classList.add("fixed-round");
+    const round = history[focusedRound - 1];
+    let heading = htmlElement(
+      "div",
+      `
+    <div class="flex"><h2 class="center">Runde ${focusedRound}</h2></div
+  `
+    );
+    let matchDoms = [];
+    for (const match of round) {
+      "isFreeGame" in match ? matchDoms.push(freeGameDom(match)) : matchDoms.push(regularMatchDom(match, roundIsEditable));
+    }
+    dom.replaceChildren(heading, ...matchDoms);
+    if (roundIsEditable) {
+      const closeButton = htmlElement(
+        "div",
+        `
+      <div class="flex">
+        <button
+          id="action-fix-round"
+          class="btn btn-action right"
+        >
+          Runde Festschreiben
+        </button>
+      </div>
+    `
+      );
+      closeButton.addEventListener("click", () => {
+        closeRound(focusedRound);
+      });
+      dom.appendChild(closeButton);
+    } else {
+      const reOpenButton = htmlElement(
+        "div",
+        `
+      <div class="flex">
+        <button
+          id="action-attempt-reopen-round"
+          class="btn btn-alert right"
+        >
+          Fehler korrigieren
+        </button>
+      </div>
+    `
+      );
+      reOpenButton.addEventListener(
+        "click",
+        () => attemptReopenRound(focusedRound)
+      );
+      dom.appendChild(reOpenButton);
+    }
+    ;
+    document.getElementById("round-nav").after(dom);
+    highlightRoundNavItem(focusedRound);
+  };
+  var destroyRoundView = () => document.getElementById("round-view")?.remove();
+  var closeRound = (roundNumber) => {
+    const history = load("history");
+    const setting = load("setting");
+    const roundCount = load("roundCount");
+    const correctingThisRound = load("correctingRound") != void 0;
+    const round = history[roundNumber - 1];
+    let index = 0;
+    for (const result of document.querySelectorAll(
+      ".match .result .btn-result.second"
+    )) {
+      if (result.innerHTML == "?") {
+        createAlert(`
+        Die Runde kann noch nicht festgeschrieben werden,
+        weil noch Ergebnisse fehlen.
+      `);
+        return;
       }
-    })
-}
+      result.innerHTML == "1" ? round[index].winningTeam = 1 : round[index].winningTeam = 0;
+      index++;
+    }
+    history[roundNumber - 1] = round;
+    dump("history", history);
+    if (correctingThisRound) {
+      erase("correctingRound");
+      resetNextRound(history, setting, roundCount);
+    }
+    setNextRound(history, setting, roundCount);
+    render();
+  };
+  var attemptReopenRound = (roundNumber) => {
+    const history = load("history");
+    const roundCount = load("roundCount");
+    if (tournamentHasFinished(history, roundCount)) {
+      reopenRound(roundNumber);
+      return;
+    }
+    const currentRoundNumber = calculateCurrentRound();
+    createReopenRoundConfirmation(roundNumber, currentRoundNumber);
+  };
 
-const destroyDataForm = () => document.getElementById('data-form')?.remove()
+  // app/components/managePlayersDialog.ts
+  var createManagePlayersDialog = () => {
+    const participants = load("participants") || [];
+    const departedPlayers = load("departedPlayers") || {};
+    const currentRound = calculateCurrentRound();
+    const activePlayers = participants.filter(
+      (player) => !departedPlayers[player]
+    );
+    if (activePlayers.length === 0) {
+      createAlert("Alle Spieler haben das Turnier bereits verlassen.");
+      return;
+    }
+    const playerRows = activePlayers.map((player) => {
+      const ranking = calculateRanking(participants, load("history") || []);
+      const playerRanking = ranking.find(([name]) => name === player);
+      const points = playerRanking ? playerRanking[1] : 0;
+      return `
+      <div class="manage-player-row">
+        <div class="player-info">
+          <div class="player-name">${player}</div>
+          <div class="player-points">${points} Punkte</div>
+        </div>
+        <button class="btn btn-alert remove-player-btn" data-player="${player}">
+          Entfernen
+        </button>
+      </div>
+    `;
+    }).join("");
+    const dom = htmlElement(
+      "div",
+      `
+    <div id="manage-players-dialog" class="alert">
+      <div class="alert-body manage-players-body">
+        <h2>Spieler verwalten</h2>
+        <div class="manage-players-subtitle">
+          Entfernung nach Runde ${currentRound - 1}
+        </div>
 
-const onParticipantInputChange = (_event) => {
-  // Adapt textarea size whenever input changes
-  const input = document.getElementById('input-participants')
-  let participants = readParticipants()
-  dump('participants', participants)
-  input.rows = Math.max(input.rows, participants.length + 2)
-}
+        <div class="manage-players-list">
+          ${playerRows}
+        </div>
 
-const readParticipants = () =>
-  domRead('input-participants')
-    .split('\n')
-    .filter((line) => line.trim())
-
-const readTitle = () => domRead('input-title')
-
-const readRoundCount = () => Number(domRead('input-round-count'))
-const createAlert = (message, callback = null) => {
-  message = message.trim()
-  const id = randomId()
-
-  if (callback) {
-    const dom = domFromHTML(`
-      <div id=${id} class="alert">
-        <div class="alert-body">
-          <div class="alert-message">
-            ${message}
-          </div>
-          <div class="flex">
-            <button
-              id="action-confirm-alert-${id}"
-              class="btn btn-alert"
-            >
-              Ja
-            </button>
-            <button
-              id="action-cancel-alert-${id}"
-              class="btn btn-action right"
-            >
-              Abbrechen
-            </button>
-          </div>
+        <div class="flex">
+          <button id="action-close-manage-players" class="btn btn-action right">
+            Schlie\xDFen
+          </button>
         </div>
       </div>
-    `)
+    </div>
+  `
+    );
+    document.getElementById("universe").appendChild(dom);
+    dom.querySelectorAll(".remove-player-btn").forEach((element) => {
+      const button = element;
+      button.addEventListener("click", (e) => {
+        const player = e.target.dataset.player;
+        confirmRemovePlayer(player, currentRound - 1);
+      });
+    });
+    dom.querySelector("#action-close-manage-players").addEventListener("click", destroyManagePlayersDialog);
+  };
+  var destroyManagePlayersDialog = () => {
+    document.getElementById("manage-players-dialog")?.remove();
+  };
+  var confirmRemovePlayer = (player, afterRound) => {
+    createAlert(
+      `
+    Spieler "${player}" nach Runde ${afterRound} entfernen?
 
-    document.getElementById('universe').appendChild(dom)
+    Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden.
+    Nach dieser Aktion wird die gegenw\xE4rtig offene Runde neu gesetzt.
+    Stell sicher, dass die Runde noch nicht begonnen hat.
+    Entferne den Spieler erst, wenn die Runde abgeschlossen ist.
+  `,
+      () => removePlayer(player, afterRound)
+    );
+  };
+  var removePlayer = (player, afterRound) => {
+    const departedPlayers = load("departedPlayers") || {};
+    departedPlayers[player] = afterRound;
+    dump("departedPlayers", departedPlayers);
+    destroyManagePlayersDialog();
+    resetNextRound();
+    render();
+  };
 
-    document
-      .getElementById(`action-confirm-alert-${id}`)
-      .addEventListener('click', () => {
-        destroyAlert(id)
-        callback()
-      })
-
-    document
-      .getElementById(`action-cancel-alert-${id}`)
-      .addEventListener('click', () => {
-        destroyAlert(id)
-      })
-  } else {
-    const dom = domFromHTML(`
-      <div id=${id} class="alert">
-        <div class="alert-body">
-          <div class="alert-message">
-            ${message}
-          </div>
-          <div class="flex">
-            <button
-              id="action-close-alert-${id}"
-              class="btn btn-action right"
-            >
-              OK
-            </button>
-          </div>
-        </div>
+  // app/components/rankingTable.ts
+  var titleDom = (title) => htmlElement(
+    "div",
+    `
+    <div class="flex"><h1 class="center">${title}</h1></div>
+  `
+  );
+  var headingDom = (round, tournamentIsOver) => tournamentIsOver ? htmlElement(
+    "div",
+    `<div class=flex><h2 class="center">Endstand</h2></div>`
+  ) : htmlElement(
+    "div",
+    `
+      <div class=flex>
+        <h2 class="center">Zwischenstand nach Runde ${round}</h2>
       </div>
-    `)
+    `
+  );
+  var managePlayersButtonDom = () => {
+    const dom = htmlElement(
+      "div",
+      `
+    <div class="flex">
+      <button id="action-manage-players" class="btn btn-action center">
+        Spieler verwalten
+      </button>
+    </div>
+  `
+    );
+    dom.querySelector("#action-manage-players").addEventListener("click", createManagePlayersDialog);
+    return dom;
+  };
+  var tableDom = (rankingGroups, departedPlayers) => {
+    const dom = htmlElement("table", `<table class="result-table"></table>`);
+    const rows = [];
+    rows.push(
+      htmlElement(
+        "tr",
+        `
+      <tr>
+        <th>Platz</th>
+        <th>Name</th>
+        <th>Punkte</th>
+        <th>Buchholz</th>
+      </tr>
+    `
+      )
+    );
+    let rank = 1;
+    let dark = true;
+    for (const group of rankingGroups) {
+      for (const [name, points, buchholz] of group) {
+        const isDeparted = departedPlayers && departedPlayers[name] !== void 0;
+        const departedText = isDeparted ? ` (nach Runde ${departedPlayers[name]})` : "";
+        rows.push(
+          htmlElement(
+            "tr",
+            `
+          <tr class="${dark ? "dark" : "bright"} ${isDeparted ? "departed" : ""}">
+            <td>${rank}</td>
+            <td>${name}${departedText}</td>
+            <td>${points}</td>
+            <td>${buchholz}</td>
+          </tr>
+        `
+          )
+        );
+      }
+      dark = !dark;
+      rank += group.length;
+    }
+    dom.replaceChildren(...rows);
+    return dom;
+  };
+  var groupRankingByPointsAndBuchholz = (ranking) => {
+    return groupBy(
+      ranking,
+      ([thisPlayer, thisPoints, thisBuchholz], [thatPlayer, thatPoints, thatBuchholz]) => thisPoints == thatPoints && thisBuchholz == thatBuchholz
+    );
+  };
+  var createRankingTable = (participants, history) => {
+    if (!participants) return;
+    const ranking = calculateRanking(participants, history);
+    const groups = groupRankingByPointsAndBuchholz(ranking);
+    const title = load("title");
+    const roundCount = load("roundCount");
+    const currentRound = calculateCurrentRound();
+    const departedPlayers = load("departedPlayers") || {};
+    let rankedRound = 0;
+    if (currentRound) {
+      rankedRound = roundIsOpen(history[currentRound - 1]) ? currentRound - 1 : currentRound;
+    }
+    const dom = htmlElement("div", `<div id="ranking-table"></div>`);
+    const tournamentFinished = tournamentHasFinished(history, roundCount);
+    const showManageButton = tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount);
+    const elements = [
+      titleDom(title),
+      headingDom(rankedRound, tournamentFinished),
+      ...showManageButton ? [managePlayersButtonDom()] : [],
+      tableDom(groups, departedPlayers)
+    ];
+    dom.replaceChildren(...elements);
+    document.getElementById("tournament-data").replaceChildren(dom);
+  };
 
-    document.getElementById('universe').appendChild(dom)
+  // app/app.ts
+  window.onload = () => render();
+  var render = () => {
+    destroyRoundNavigation();
+    destroyRoundView();
+    const participants = load("participants", []);
+    const history = load("history", []);
+    const roundCount = load("roundCount");
+    const title = load("title");
+    createHeader();
+    if (tournamentHasStarted(history)) {
+      const setting = load("setting") || [];
+      createRankingTable(setting, history);
+      createRoundNavigation(roundCount);
+      createRoundView(calculateCurrentRound());
+      return;
+    }
+    createDataForm();
+    dump("history", []);
+    title && writeToInputField("input-title", load("title"));
+    participants && writeToInputField("input-participants", participants.join("\n")) && onParticipantInputChange();
+    roundCount && writeToInputField("input-round-count", String(roundCount)) && createRoundNavigation(roundCount);
+  };
+  var startTournament = () => {
+    const history = load("history") || [];
+    if (tournamentHasStarted(history)) return;
+    const participants = readParticipants();
+    const duplicates = findDuplicates(participants);
+    if (isTruthy(duplicates)) {
+      createAlert(`
+      Die folgenden Eintr\xE4ge tauchen doppelt auf:
 
-    document
-      .getElementById(`action-close-alert-${id}`)
-      .addEventListener('click', () => destroyAlert(id))
-    document.getElementById(id).addEventListener('click', (e) => {
-      if (e.target.id === id) destroyAlert(id)
-    })
-  }
-}
+          ${duplicates.join("\n")}
 
-const destroyAlert = (id) => {
-  document.getElementById(id)?.remove()
-}
+      Bitte \xE4ndere die Eintr\xE4ge, um sie zu vereindeutigen.
+    `);
+      return;
+    }
+    const setting = [...participants];
+    const roundCount = readRoundCount();
+    dump("participants", participants);
+    dump("setting", setting);
+    dump("roundCount", roundCount);
+    dump("title", readTitle());
+    dump("history", history);
+    setNextRound(history, setting, roundCount);
+    render();
+  };
+  var createTournament = () => {
+    storeTournament();
+    for (const key of STORAGE_KEYS) {
+      erase(key);
+    }
+    render();
+  };
+  var storeTournament = () => {
+    const history = load("history");
+    if (!tournamentHasStarted(history)) return;
+    const title = load("title");
+    const tournament = {
+      title,
+      history: load("history"),
+      participants: load("participants"),
+      setting: load("setting"),
+      roundCount: load("roundCount"),
+      departedPlayers: load("departedPlayers")
+    };
+    let storeValue = load("savedTournaments") || {};
+    storeValue[title] = tournament;
+    dump("savedTournaments", storeValue);
+  };
+  var openTournament = (title) => {
+    storeTournament();
+    const tournament = load("savedTournaments")[title];
+    for (const key of Object.keys(tournament)) {
+      dump(key, tournament[key]);
+    }
+    render();
+  };
+  var downloadJSON = (data, filename) => {
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  var exportTournament = () => {
+    const title = load("title");
+    const data = {};
+    for (const key of STORAGE_KEYS) {
+      const value = load(key);
+      if (value !== null) {
+        data[key] = value;
+      }
+    }
+    downloadJSON(data, title + ".json");
+  };
+  var openImportFileDialogue = () => {
+    document.getElementById("import-tournament-file-input").click();
+  };
+  var importTournament = (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = JSON.parse(e.target.result);
+      for (const key of Object.keys(data)) {
+        const value = data[key];
+        dump(key, value);
+      }
+      render();
+    };
+    reader.readAsText(file);
+  };
+
+  // app/main.ts
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("App loaded");
+  });
+})();
 </script>
   </head>
 

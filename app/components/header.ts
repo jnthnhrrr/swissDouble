@@ -1,5 +1,17 @@
-const createHeader = () => {
-  const dom = domFromHTML(`
+import { createOpenDialog } from './openDialog.js'
+import { htmlElement } from '../dom.js'
+
+import {
+  createTournament,
+  importTournament,
+  exportTournament,
+  openImportFileDialogue,
+} from '../app'
+
+export const createHeader = () => {
+  const dom = htmlElement(
+    'div',
+    `
     <div id="header" class="page">
 
       <div class="left-group">
@@ -50,26 +62,27 @@ const createHeader = () => {
       </div>
 
     </div>
-  `)
-  document.getElementById('header').replaceWith(dom)
+  `
+  )
+  document.getElementById('header')!.replaceWith(dom)
 
   document
-    .getElementById('action-create-tournament')
+    .getElementById('action-create-tournament')!
     .addEventListener('click', createTournament)
 
   document
-    .getElementById('open-tournament-section')
+    .getElementById('open-tournament-section')!
     .addEventListener('click', createOpenDialog)
 
   document
-    .getElementById('export-tournament-section')
+    .getElementById('export-tournament-section')!
     .addEventListener('click', exportTournament)
 
   document
-    .getElementById('import-tournament-section')
+    .getElementById('import-tournament-section')!
     .addEventListener('click', openImportFileDialogue)
 
   document
-    .getElementById('import-tournament-file-input')
+    .getElementById('import-tournament-file-input')!
     .addEventListener('change', importTournament)
 }

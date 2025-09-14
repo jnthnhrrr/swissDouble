@@ -1,5 +1,12 @@
-const createDataForm = () => {
-  const dataForm = domFromHTML(`
+import { dump } from '../storage.js'
+import { readFromInputField, htmlElement } from '../dom.js'
+
+import { startTournament } from '../app'
+
+export const createDataForm = () => {
+  const dataForm = htmlElement(
+    'div',
+    `
     <div id="data-form">
       <h1>Turnierdaten</h1>
       <div class="flex">
@@ -28,37 +35,39 @@ const createDataForm = () => {
         </button>
       </div>
     </div>
-  `)
-  document.getElementById('tournament-data').replaceChildren(dataForm)
+  `
+  )
+  document.getElementById('tournament-data')!.replaceChildren(dataForm)
 
   document
-    .getElementById('action-start-tournament')
+    .getElementById('action-start-tournament')!
     .addEventListener('click', startTournament)
 
   document
-    .getElementById('input-participants')
-    ?.addEventListener('keyup', (event) => {
+    .getElementById('input-participants')!
+    .addEventListener('keyup', (event) => {
       if (event.key == 'Enter') {
         onParticipantInputChange()
       }
     })
 }
 
-const destroyDataForm = () => document.getElementById('data-form')?.remove()
-
-const onParticipantInputChange = (_event) => {
+export const onParticipantInputChange = () => {
   // Adapt textarea size whenever input changes
-  const input = document.getElementById('input-participants')
+  const input = document.getElementById(
+    'input-participants'
+  ) as HTMLTextAreaElement
   let participants = readParticipants()
   dump('participants', participants)
   input.rows = Math.max(input.rows, participants.length + 2)
 }
 
-const readParticipants = () =>
-  domRead('input-participants')
+export const readParticipants = () =>
+  readFromInputField('input-participants')
     .split('\n')
-    .filter((line) => line.trim())
+    .filter((line: string) => line.trim())
 
-const readTitle = () => domRead('input-title')
+export const readTitle = () => readFromInputField('input-title')
 
-const readRoundCount = () => Number(domRead('input-round-count'))
+export const readRoundCount = () =>
+  Number(readFromInputField('input-round-count')) as number

@@ -1,50 +1,42 @@
-let expect = require('chai').expect
-let lib = require('../../app/lib')
-let utils = require('../../app/utils')
+import { expect } from 'chai'
+import { JSDOM } from 'jsdom'
+import { determineNextRound } from '../../dist/lib.js'
+import { dump } from '../../dist/storage.js'
 
-describe('determineNextRound Integration Test', () => {
+describe('determineNextRound integration test', () => {
   before(() => {
-    // Mock load
-    global.load = (key, defaultValue) => {
-      if (key === 'participants')
-        return ['Player1', 'Player2', 'Player3', 'Player4', 'Player5', 'Player6']
-      if (key === 'departedPlayers') return {}
-      return defaultValue
-    }
-
-    global.setDiff = utils.setDiff
-    global.drawRandom = utils.drawRandom
-    global.popRandom = utils.popRandom
-    global.isTruthy = utils.isTruthy
+    const dom = new JSDOM('', { url: 'http://localhost' })
+    global.window = dom.window
+    global.localStorage = dom.window.localStorage
   })
 
-  describe('First round to second round progression', () => {
+  after(() => {
+    delete global.window
+    delete global.localStorage
+  })
+
+  describe('first round to second round progression', () => {
     it('determines first round correctly with 8 players (no free games)', () => {
       const participants = [
-        'Player1',
-        'Player2',
-        'Player3',
-        'Player4',
-        'Player5',
-        'Player6',
-        'Player7',
-        'Player8',
+        'player1',
+        'player2',
+        'player3',
+        'player4',
+        'player5',
+        'player6',
+        'player7',
+        'player8',
       ]
+      dump('participants', participants)
+      dump('departedplayers', {})
       const emptyHistory = []
 
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      // phase 1: determine first round
+      const firstRoundMatches = determineNextRound(participants, emptyHistory)
 
-      // PHASE 1: Determine first round
-      const firstRoundMatches = lib.determineNextRound(participants, emptyHistory)
-
-      // Verify first round structure: 8 players = 2 matches (4 players each), no free games
+      // 8 players = 2 matches (4 players each), no free games
       expect(firstRoundMatches).to.have.length(2)
 
-      // All matches should be regular matches (no free games)
       firstRoundMatches.forEach((match) => {
         expect(match).to.have.property('teams')
         expect(match).to.have.property('winningTeam', null)
@@ -54,14 +46,13 @@ describe('determineNextRound Integration Test', () => {
         expect(match.teams[1]).to.have.length(2) // Team 2 has 2 players
       })
 
-      // Verify all players are included exactly once
       const allPlayersInFirstRound = firstRoundMatches.flatMap((match) =>
         match.teams.flatMap((team) => team)
       )
       expect(allPlayersInFirstRound).to.have.members(participants)
       expect(allPlayersInFirstRound).to.have.length(8)
 
-      // PHASE 2: Simulate playing the first round
+      // phase 2: Simulate playing the first round
       const completedFirstRound = firstRoundMatches.map((match) => ({
         ...match,
         winningTeam: 0, // Team 0 wins each match
@@ -69,7 +60,7 @@ describe('determineNextRound Integration Test', () => {
 
       const historyAfterFirstRound = [completedFirstRound]
 
-      const secondRoundMatches = lib.determineNextRound(participants, historyAfterFirstRound)
+      const secondRoundMatches = determineNextRound(participants, historyAfterFirstRound)
 
       expect(secondRoundMatches).to.have.length(2)
 
@@ -103,15 +94,11 @@ describe('determineNextRound Integration Test', () => {
     it('handles 5 players (1 free game)', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5']
       const emptyHistory = []
-
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      dump('participants', participants)
+      dump('departedPlayers', {})
 
       // PHASE 1: Determine first round
-      const firstRoundMatches = lib.determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(participants, emptyHistory)
 
       // 5 players: 4 play (1 match), 1 gets free game
       const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
@@ -138,7 +125,7 @@ describe('determineNextRound Integration Test', () => {
         return { ...match, winningTeam: 0 }
       })
 
-      const secondRoundMatches = lib.determineNextRound(participants, [completedFirstRound])
+      const secondRoundMatches = determineNextRound(participants, [completedFirstRound])
 
       const secondRegularMatches = secondRoundMatches.filter((match) => !match.isFreeGame)
       const secondFreeGameMatches = secondRoundMatches.filter((match) => match.isFreeGame)
@@ -155,14 +142,11 @@ describe('determineNextRound Integration Test', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5', 'Player6']
       const emptyHistory = []
 
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      dump('participants', participants)
+      dump('departedPlayers', {})
 
       // PHASE 1: Determine first round
-      const firstRoundMatches = lib.determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(participants, emptyHistory)
 
       // 6 players: 4 play (1 match), 2 get free games
       const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
@@ -192,14 +176,11 @@ describe('determineNextRound Integration Test', () => {
       ]
       const emptyHistory = []
 
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      dump('participants', participants)
+      dump('departedPlayers', {})
 
       // PHASE 1: Determine first round
-      const firstRoundMatches = lib.determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(participants, emptyHistory)
 
       // 7 players: 4 play (1 match), 3 get free games
       const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
@@ -213,18 +194,15 @@ describe('determineNextRound Integration Test', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5', 'Player6']
       let history = []
 
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      dump('participants', participants)
+      dump('departedPlayers', {})
 
       // Play 3 rounds and track free game distribution
       const freeGameHistory = {}
       participants.forEach((p) => (freeGameHistory[p] = 0))
 
       for (let round = 1; round <= 3; round++) {
-        const roundMatches = lib.determineNextRound(participants, history)
+        const roundMatches = determineNextRound(participants, history)
 
         // Count free games
         const freeGameMatches = roundMatches.filter((match) => match.isFreeGame)
@@ -262,13 +240,10 @@ describe('determineNextRound Integration Test', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4']
       const emptyHistory = []
 
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      dump('participants', participants)
+      dump('departedPlayers', {})
 
-      const firstRoundMatches = lib.determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(participants, emptyHistory)
 
       expect(firstRoundMatches).to.have.length(1) // 4 players = 1 match, no free games
       expect(firstRoundMatches.every((match) => !match.isFreeGame)).to.be.true
@@ -283,13 +258,10 @@ describe('determineNextRound Integration Test', () => {
       const participants = Array.from({ length: 12 }, (_, i) => `Player${i + 1}`)
       const emptyHistory = []
 
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      dump('participants', participants)
+      dump('departedPlayers', {})
 
-      const firstRoundMatches = lib.determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(participants, emptyHistory)
 
       expect(firstRoundMatches).to.have.length(3) // 12 players = 3 matches, no free games
       expect(firstRoundMatches.every((match) => !match.isFreeGame)).to.be.true
@@ -313,14 +285,12 @@ describe('determineNextRound Integration Test', () => {
         'Player8',
       ]
       const emptyHistory = []
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      dump('participants', participants)
+      dump('departedPlayers', {})
+
       // Run multiple times to test the randomness while verifying the pairing rule
       for (let trial = 0; trial < 10; trial++) {
-        const firstRoundMatches = lib.determineNextRound(participants, emptyHistory) // Should be 2 matches, no free games
+        const firstRoundMatches = determineNextRound(participants, emptyHistory) // Should be 2 matches, no free games
         expect(firstRoundMatches).to.have.length(2)
         expect(firstRoundMatches.every((match) => !match.isFreeGame)).to.be.true
 
@@ -381,14 +351,11 @@ describe('determineNextRound Integration Test', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5', 'Player6']
       const emptyHistory = []
 
-      global.load = (key, defaultValue) => {
-        if (key === 'participants') return participants
-        if (key === 'departedPlayers') return {}
-        return defaultValue
-      }
+      dump('participants', participants)
+      dump('departedPlayers', {})
 
       for (let trial = 0; trial < 10; trial++) {
-        const firstRoundMatches = lib.determineNextRound(participants, emptyHistory)
+        const firstRoundMatches = determineNextRound(participants, emptyHistory)
 
         const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
         const freeGameMatches = firstRoundMatches.filter((match) => match.isFreeGame)

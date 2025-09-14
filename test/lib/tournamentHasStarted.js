@@ -1,20 +1,15 @@
-let expect = require('chai').expect
-let lib = require('../../app/lib')
-let utils = require('../../app/utils')
+import { expect } from 'chai'
+import { tournamentHasStarted } from '../../dist/lib.js'
 
 describe('tournamentHasStarted', () => {
-  before(() => {
-    global.isTruthy = utils.isTruthy
-  })
-
   describe('when there is no history', () => {
     it('returns false for undefined', () => {
-      const result = lib.tournamentHasStarted(undefined)
+      const result = tournamentHasStarted(undefined)
       expect(result).to.be.false
     })
 
     it('returns false for empty array', () => {
-      const result = lib.tournamentHasStarted([])
+      const result = tournamentHasStarted([])
       expect(result).to.be.false
     })
   })
@@ -32,7 +27,7 @@ describe('tournamentHasStarted', () => {
           },
         ],
       ]
-      const result = lib.tournamentHasStarted(history)
+      const result = tournamentHasStarted(history)
       expect(result).to.be.true
     })
   })

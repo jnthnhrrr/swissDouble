@@ -1,10 +1,10 @@
-let expect = require('chai').expect
-let utils = require('../../app/utils')
+import { expect } from 'chai'
+import { groupBy } from '../../dist/utils.js'
 
 describe('groupBy', () => {
   describe('when array is empty', () => {
     it('returns an empty array', () => {
-      expect(utils.groupBy([])).to.be.deep.equal([])
+      expect(groupBy([])).to.be.deep.equal([])
     })
   })
 
@@ -19,7 +19,7 @@ describe('groupBy', () => {
     ]
     const comparator = (thisTriple, thatTriple) =>
       thisTriple[1] == thatTriple[1] && thisTriple[2] == thatTriple[2]
-    const result = utils.groupBy(array, comparator)
+    const result = groupBy(array, comparator)
     expect(result).to.be.deep.equal([
       [
         [1, 2, 2],

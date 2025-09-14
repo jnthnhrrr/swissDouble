@@ -1,38 +1,32 @@
-// history is an array of rounds.
-// Each round in history is an array of matches.
-// Each regular match has the following structure:
-//
-// {
-//   teams: [["Player1", "Player2"], ["Player3", "Player4"]],
-//   winningTeam: 0,
-// }
-//
-// where the value of winningTeam indicates the index of the winning team in
-// teams field.
-// matches representing freegames have the following structure:
-//
-// {
-//   isFreeGame: true,
-//   player: "Player1",
-// }
-//
+import type {
+  History,
+  Round,
+  Ranking,
+  Player,
+  Team,
+  Points,
+  Buchholz,
+} from './types.js'
+import { load, dump } from './storage.js'
+import { isTruthy, setDiff, popRandom, drawRandom } from './utils.js'
 
-const tournamentHasStarted = (history) => isTruthy(history)
+export const tournamentHasStarted = (history: History) => isTruthy(history)
 
-const tournamentHasFinished = (history, roundCount) => {
+export const tournamentHasFinished = (history: History, roundCount: number) => {
   return history.length == roundCount && !roundIsOpen(history[roundCount - 1])
 }
 
-const roundIsOpen = (round) => round.some((match) => match.winningTeam === null)
+export const roundIsOpen = (round: Round) =>
+  round.some((match) => match.winningTeam === null)
 
-const calculateCurrentRound = () => {
+export const calculateCurrentRound = () => {
   // which round is current round, 1-indexed
   const history = load('history')
   return history.length
 }
 
-const getActiveParticipants = () => {
-  const participants = load('participants')
+export const getActiveParticipants = () => {
+  const participants: Player[] = load('participants')
   let departedPlayers = load('departedPlayers', {})
   departedPlayers = typeof departedPlayers != 'undefined' ? departedPlayers : {}
   const activeParticipants = participants.filter((participant) => {
@@ -41,7 +35,10 @@ const getActiveParticipants = () => {
   return activeParticipants
 }
 
-const determineNextRound = (participants, history) => {
+export const determineNextRound = (
+  participants: Player[],
+  history: History
+): Round => {
   const ranking = calculateRanking(participants, history)
   const rankingObject = Object.fromEntries(ranking)
   const activeParticipants = getActiveParticipants()
@@ -54,16 +51,14 @@ const determineNextRound = (participants, history) => {
   if (history.length == 0) {
     pairings = drawPairingsForFirstRound(participants, freeGamers)
   } else {
-    pairings = drawPairings(
-      activeParticipants,
-      forbiddenPairings,
-      freeGamers
-    ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
+    pairings = drawPairings(activeParticipants, forbiddenPairings, [
+      ...freeGamers,
+    ]).sort((team: Team) => rankingObject[team[0]] + rankingObject[team[1]])
   }
-  let matches = []
+  let matches: Round = []
   for (let i = 0; i < pairings.length; i += 2) {
     matches.push({
-      teams: [pairings[i], pairings[i + 1]],
+      teams: [pairings[i] as Team, pairings[i + 1] as Team],
       winningTeam: null,
     })
   }
@@ -77,14 +72,17 @@ const determineNextRound = (participants, history) => {
   return matches
 }
 
-const calculateForbiddenPairings = (participants, history) => {
-  let forbiddenPartners = {}
+export const calculateForbiddenPairings = (
+  participants: Player[],
+  history: History
+) => {
+  let forbiddenPartners: Record<Player, Set<Player>> = {}
   for (const participant of participants) {
     forbiddenPartners[participant] = new Set([participant])
   }
   for (const round of history) {
     for (const match of round) {
-      if (match.isFreeGame) {
+      if ('isFreeGame' in match) {
         continue
       }
       for (const team of match.teams) {
@@ -96,14 +94,21 @@ const calculateForbiddenPairings = (participants, history) => {
   return forbiddenPartners
 }
 
-const drawPairings = (participants, forbiddenPairings, freeGamers) => {
-  participants = new Set(participants)
+export const drawPairings = (
+  participants: Player[],
+  forbiddenPairings: Record<Player, Set<Player>>,
+  freeGamers: Player[]
+): Team[] => {
+  participants = [...new Set(participants)]
   const players = setDiff(participants, freeGamers)
-  let pairings = []
+  let pairings: Team[] = []
   while (players.size > 0) {
     const [playerOne] = players
     players.delete(playerOne)
-    const possiblePartners = setDiff(players, forbiddenPairings[playerOne])
+    const possiblePartners = setDiff(
+      [...players],
+      [...forbiddenPairings[playerOne]]
+    )
     if (possiblePartners.size == 0) {
       // No possible solution with the current drawing, try again from scratch
       return drawPairings(participants, forbiddenPairings, freeGamers)
@@ -115,7 +120,10 @@ const drawPairings = (participants, forbiddenPairings, freeGamers) => {
   return pairings
 }
 
-const drawPairingsForFirstRound = (participants, freeGamers) => {
+export const drawPairingsForFirstRound = (
+  participants: Player[],
+  freeGamers: Set<Player>
+) => {
   // This implements the requirement that in the first round, we want to pair
   // each player from the top half of the list with a player from the bottom
   // half.
@@ -123,8 +131,7 @@ const drawPairingsForFirstRound = (participants, freeGamers) => {
   // Here, there is no need to check for forbiddenPairings because we are in
   // first round
 
-  participants = new Set(participants)
-  const players = [...setDiff(participants, freeGamers)]
+  const players = [...setDiff(participants, [...freeGamers])]
   let pairings = []
   const breakIndex = players.length / 2
   const topHalf = players.slice(0, breakIndex)
@@ -136,13 +143,16 @@ const drawPairingsForFirstRound = (participants, freeGamers) => {
   return pairings
 }
 
-const calculateFreeGamers = (participants, history) => {
+export const calculateFreeGamers = (
+  participants: Player[],
+  history: History
+): Set<Player> => {
   // Participants with the lowest ranking who have not yet had a free game will
   // get a free game.
-  let ranking = calculateRanking(participants, history)
+  let ranking: Ranking = calculateRanking(participants, history)
   const participantCount = participants.length
   const freeGamesCount = participantCount % 4
-  let freeGamers = new Set([])
+  let freeGamers: Set<Player> = new Set([])
   if (freeGamesCount == 0) {
     return freeGamers
   }
@@ -157,10 +167,10 @@ const calculateFreeGamers = (participants, history) => {
   return freeGamers
 }
 
-const playerHadFreeGame = (player, history) => {
+export const playerHadFreeGame = (player: Player, history: History) => {
   for (const round of history) {
     for (const match of round) {
-      if (!match.isFreeGame) {
+      if (!('isFreeGame' in match)) {
         continue
       }
       if (match.player == player) {
@@ -171,9 +181,11 @@ const playerHadFreeGame = (player, history) => {
   return false
 }
 
-const calculatePoints = (participants, history) => {
-  // Returns sorted array of tuple [player, points] buchholz, 2nd-buchholz]
-  let ranking = {}
+export const calculatePoints = (
+  participants: Player[],
+  history: History
+): Record<Player, Points> => {
+  let ranking: Record<Player, Points> = {}
   for (const participant of participants) {
     ranking[participant] = 0
   }
@@ -182,11 +194,12 @@ const calculatePoints = (participants, history) => {
       continue
     }
     for (const match of round) {
-      if (match.isFreeGame) {
+      if ('isFreeGame' in match) {
         ranking[match.player] += 1
         continue
       }
-      for (const winningPlayer of match.teams[match.winningTeam]) {
+      // match.winningTeam is a number: above we checked the round is not open
+      for (const winningPlayer of match.teams[match.winningTeam as number]) {
         ranking[winningPlayer] += 1
       }
     }
@@ -194,8 +207,11 @@ const calculatePoints = (participants, history) => {
   return ranking
 }
 
-const calculateBuchholz = (points, history) => {
-  const buchholz = {}
+export const calculateBuchholz = (
+  points: Record<Player, Points>,
+  history: History
+): Record<Player, Buchholz> => {
+  const buchholz: Record<Player, Buchholz> = {}
   for (const player of Object.keys(points)) {
     buchholz[player] = 0
   }
@@ -205,7 +221,7 @@ const calculateBuchholz = (points, history) => {
       continue
     }
     for (const match of round) {
-      if (match.isFreeGame) {
+      if ('isFreeGame' in match) {
         continue
       }
       const teams = match.teams
@@ -225,11 +241,14 @@ const calculateBuchholz = (points, history) => {
   return buchholz
 }
 
-const calculateRanking = (participants, history) => {
+export const calculateRanking = (
+  participants: Player[],
+  history: History
+): Ranking => {
   // Returns sorted array of tuples [player, points, buchholz]
   let points = calculatePoints(participants, history)
   let buchholz = calculateBuchholz(points, history)
-  let ranking = participants.map((participant) => [
+  let ranking: Ranking = participants.map((participant) => [
     participant,
     points[participant],
     buchholz[participant],
@@ -237,33 +256,31 @@ const calculateRanking = (participants, history) => {
   return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2])
 }
 
-const resetNextRound = (history, setting, roundCount) => {
+export const resetNextRound = (
+  history?: History,
+  setting?: Player[],
+  roundCount?: number
+) => {
   if (typeof history === 'undefined') {
-    history = load('history')
+    history = load('history') as History
   }
   if (typeof setting === 'undefined') {
-    setting = load('setting')
+    setting = load('setting') as Player[]
   }
   if (typeof roundCount === 'undefined') {
-    roundCount = load('roundCount')
+    roundCount = load('roundCount') as number
   }
   history.pop()
   dump('history', history)
   setNextRound(history, setting, roundCount)
 }
 
-const setNextRound = (history, setting, roundCount) => {
+export const setNextRound = (
+  history: History,
+  setting: Player[],
+  roundCount: number
+) => {
   if (calculateCurrentRound() == roundCount) return
-  dump('history', [...history, determineNextRound(setting, history)])
-}
-
-/* Exporting functions for testing */
-if (typeof exports !== 'undefined') {
-  exports.calculateRanking = calculateRanking
-  exports.calculatePoints = calculatePoints
-  exports.calculateBuchholz = calculateBuchholz
-  exports.tournamentHasStarted = tournamentHasStarted
-  exports.playerHadFreeGame = playerHadFreeGame
-  exports.calculateFreeGamers = calculateFreeGamers
-  exports.determineNextRound = determineNextRound
+  const newHistory: History = [...history, determineNextRound(setting, history)]
+  dump('history', newHistory)
 }

@@ -1,4 +1,9 @@
-const highlightRoundNavItem = (roundNumber) => {
+import { createRoundView } from './roundView.js'
+
+import { htmlElement } from '../dom.js'
+import { calculateCurrentRound } from '../lib.js'
+
+export const highlightRoundNavItem = (roundNumber: number) => {
   let items = document.getElementsByClassName('nav-round')
   for (let index = 1; index <= items.length; index++) {
     const item = items[index - 1]
@@ -9,11 +14,13 @@ const highlightRoundNavItem = (roundNumber) => {
   }
 }
 
-const createRoundNavigation = (focusedRound) => {
+export const createRoundNavigation = (focusedRound: number) => {
   const currentRound = calculateCurrentRound()
   let items = []
   for (let round = 1; round <= focusedRound; round++) {
-    let navItem = domFromHTML(`
+    let navItem = htmlElement(
+      'div',
+      `
       <div
         class="
         nav-round
@@ -23,7 +30,8 @@ const createRoundNavigation = (focusedRound) => {
       >
         Runde ${round}
       </div>
-    `)
+    `
+    )
     round <= currentRound &&
       navItem.addEventListener('click', () => {
         createRoundView(round)
@@ -31,10 +39,10 @@ const createRoundNavigation = (focusedRound) => {
     items.push(navItem)
   }
   destroyRoundNavigation()
-  const dom = domFromHTML(`<div id="round-nav"></div>`)
+  const dom = htmlElement('div', `<div id="round-nav"></div>`)
   dom.replaceChildren(...items)
-  document.getElementById('tournament-data').after(dom)
+  ;(document.getElementById('tournament-data') as HTMLDivElement)!.after(dom)
 }
 
-const destroyRoundNavigation = () =>
+export const destroyRoundNavigation = () =>
   document.getElementById('round-nav')?.remove()

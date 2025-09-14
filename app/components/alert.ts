@@ -1,9 +1,17 @@
-const createAlert = (message, callback = null) => {
+import { randomId } from '../utils.js'
+import { htmlElement } from '../dom.js'
+
+export const createAlert = (
+  message: string,
+  callback: Function | null = null
+) => {
   message = message.trim()
   const id = randomId()
 
   if (callback) {
-    const dom = domFromHTML(`
+    const dom = htmlElement(
+      'div',
+      `
       <div id=${id} class="alert">
         <div class="alert-body">
           <div class="alert-message">
@@ -25,24 +33,27 @@ const createAlert = (message, callback = null) => {
           </div>
         </div>
       </div>
-    `)
+    `
+    )
 
-    document.getElementById('universe').appendChild(dom)
+    ;(document.getElementById('universe') as HTMLDivElement).appendChild(dom)
 
     document
-      .getElementById(`action-confirm-alert-${id}`)
+      .getElementById(`action-confirm-alert-${id}`)!
       .addEventListener('click', () => {
         destroyAlert(id)
         callback()
       })
 
     document
-      .getElementById(`action-cancel-alert-${id}`)
+      .getElementById(`action-cancel-alert-${id}`)!
       .addEventListener('click', () => {
         destroyAlert(id)
       })
   } else {
-    const dom = domFromHTML(`
+    const dom = htmlElement(
+      'div',
+      `
       <div id=${id} class="alert">
         <div class="alert-body">
           <div class="alert-message">
@@ -58,19 +69,21 @@ const createAlert = (message, callback = null) => {
           </div>
         </div>
       </div>
-    `)
+    `
+    )
 
-    document.getElementById('universe').appendChild(dom)
+    ;(document.getElementById('universe') as HTMLDivElement).appendChild(dom)
 
     document
-      .getElementById(`action-close-alert-${id}`)
+      .getElementById(`action-close-alert-${id}`)!
       .addEventListener('click', () => destroyAlert(id))
-    document.getElementById(id).addEventListener('click', (e) => {
-      if (e.target.id === id) destroyAlert(id)
+
+    document.getElementById(id)!.addEventListener('click', (e) => {
+      if ((e.target as HTMLDivElement).id === id) destroyAlert(id)
     })
   }
 }
 
-const destroyAlert = (id) => {
+const destroyAlert = (id: string) => {
   document.getElementById(id)?.remove()
 }

@@ -1,11 +1,24 @@
-const createManagePlayersDialog = () => {
+import { createAlert } from './alert.js'
+
+import type { Player } from '../types.js'
+import { htmlElement } from '../dom.js'
+import { load, dump } from '../storage.js'
+import {
+  calculateCurrentRound,
+  calculateRanking,
+  resetNextRound,
+} from '../lib.js'
+
+import { render } from '../app.js'
+
+export const createManagePlayersDialog = () => {
   const participants = load('participants') || []
   const departedPlayers = load('departedPlayers') || {}
   const currentRound = calculateCurrentRound()
 
   // Get active players (not yet departed)
   const activePlayers = participants.filter(
-    (player) => !departedPlayers[player]
+    (player: Player) => !departedPlayers[player]
   )
 
   if (activePlayers.length === 0) {
@@ -14,7 +27,7 @@ const createManagePlayersDialog = () => {
   }
 
   const playerRows = activePlayers
-    .map((player) => {
+    .map((player: Player) => {
       const ranking = calculateRanking(participants, load('history') || [])
       const playerRanking = ranking.find(([name]) => name === player)
       const points = playerRanking ? playerRanking[1] : 0
@@ -33,7 +46,9 @@ const createManagePlayersDialog = () => {
     })
     .join('')
 
-  const dom = domFromHTML(`
+  const dom = htmlElement(
+    'div',
+    `
     <div id="manage-players-dialog" class="alert">
       <div class="alert-body manage-players-body">
         <h2>Spieler verwalten</h2>
@@ -52,21 +67,23 @@ const createManagePlayersDialog = () => {
         </div>
       </div>
     </div>
-  `)
+  `
+  )
 
-  document.getElementById('universe').appendChild(dom)
+  document.getElementById('universe')!.appendChild(dom)
 
   // Add event listeners for remove buttons
-  dom.querySelectorAll('.remove-player-btn').forEach((button) => {
+  dom.querySelectorAll('.remove-player-btn').forEach((element) => {
+    const button = element as HTMLButtonElement
     button.addEventListener('click', (e) => {
-      const playerName = e.target.dataset.player
-      confirmRemovePlayer(playerName, currentRound - 1)
+      const player = (e.target as HTMLButtonElement).dataset.player as Player
+      confirmRemovePlayer(player, currentRound - 1)
     })
   })
 
   // Close dialog listener
   dom
-    .querySelector('#action-close-manage-players')
+    .querySelector('#action-close-manage-players')!
     .addEventListener('click', destroyManagePlayersDialog)
 }
 
@@ -74,23 +91,23 @@ const destroyManagePlayersDialog = () => {
   document.getElementById('manage-players-dialog')?.remove()
 }
 
-const confirmRemovePlayer = (playerName, afterRound) => {
+const confirmRemovePlayer = (player: Player, afterRound: number) => {
   createAlert(
     `
-    Spieler "${playerName}" nach Runde ${afterRound} entfernen?
+    Spieler "${player}" nach Runde ${afterRound} entfernen?
 
     Diese Aktion kann nicht rückgängig gemacht werden.
     Nach dieser Aktion wird die gegenwärtig offene Runde neu gesetzt.
     Stell sicher, dass die Runde noch nicht begonnen hat.
     Entferne den Spieler erst, wenn die Runde abgeschlossen ist.
   `,
-    () => removePlayer(playerName, afterRound)
+    () => removePlayer(player, afterRound)
   )
 }
 
-const removePlayer = (playerName, afterRound) => {
+const removePlayer = (player: Player, afterRound: number) => {
   const departedPlayers = load('departedPlayers') || {}
-  departedPlayers[playerName] = afterRound
+  departedPlayers[player] = afterRound
   dump('departedPlayers', departedPlayers)
   destroyManagePlayersDialog()
   resetNextRound()

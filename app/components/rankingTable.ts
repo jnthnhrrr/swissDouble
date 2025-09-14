@@ -1,45 +1,83 @@
-const titleDom = (title) =>
-  domFromHTML(`
-    <div class="flex"><h1 class="center">${title}</h1></div>
-  `)
+import { createManagePlayersDialog } from './managePlayersDialog.js'
 
-const headingDom = (round, tournamentIsOver) =>
+import type {
+  Player,
+  Ranking,
+  History,
+  RankingRow,
+  DepartedPlayersRecord,
+} from '../types'
+import { load } from '../storage'
+import { groupBy } from '../utils'
+import { htmlElement } from '../dom'
+import {
+  roundIsOpen,
+  calculateRanking,
+  calculateCurrentRound,
+  tournamentHasStarted,
+  tournamentHasFinished,
+} from '../lib'
+
+const titleDom = (title: string) =>
+  htmlElement(
+    'div',
+    `
+    <div class="flex"><h1 class="center">${title}</h1></div>
+  `
+  )
+
+const headingDom = (round: number, tournamentIsOver: boolean) =>
   tournamentIsOver
-    ? domFromHTML(`<div class=flex><h2 class="center">Endstand</h2></div>`)
-    : domFromHTML(`
+    ? htmlElement(
+        'div',
+        `<div class=flex><h2 class="center">Endstand</h2></div>`
+      )
+    : htmlElement(
+        'div',
+        `
       <div class=flex>
         <h2 class="center">Zwischenstand nach Runde ${round}</h2>
       </div>
-    `)
+    `
+      )
 
 const managePlayersButtonDom = () => {
-  const dom = domFromHTML(`
+  const dom = htmlElement(
+    'div',
+    `
     <div class="flex">
       <button id="action-manage-players" class="btn btn-action center">
         Spieler verwalten
       </button>
     </div>
-  `)
+  `
+  )
 
   dom
-    .querySelector('#action-manage-players')
+    .querySelector('#action-manage-players')!
     .addEventListener('click', createManagePlayersDialog)
 
   return dom
 }
 
-const tableDom = (rankingGroups, departedPlayers) => {
-  const dom = domFromHTML(`<table class="result-table"></table>`)
-  const rows = []
+const tableDom = (
+  rankingGroups: Ranking[],
+  departedPlayers: DepartedPlayersRecord
+): HTMLTableElement => {
+  const dom = htmlElement('table', `<table class="result-table"></table>`)
+  const rows: HTMLTableRowElement[] = []
   rows.push(
-    domFromHTML(`
+    htmlElement(
+      'tr',
+      `
       <tr>
         <th>Platz</th>
         <th>Name</th>
         <th>Punkte</th>
         <th>Buchholz</th>
       </tr>
-    `)
+    `
+    )
   )
   let rank = 1
   let dark = true
@@ -51,7 +89,9 @@ const tableDom = (rankingGroups, departedPlayers) => {
         : ''
 
       rows.push(
-        domFromHTML(`
+        htmlElement(
+          'tr',
+          `
           <tr class="${dark ? 'dark' : 'bright'} ${
             isDeparted ? 'departed' : ''
           }">
@@ -60,7 +100,8 @@ const tableDom = (rankingGroups, departedPlayers) => {
             <td>${points}</td>
             <td>${buchholz}</td>
           </tr>
-        `)
+        `
+        )
       )
     }
     dark = !dark
@@ -70,17 +111,20 @@ const tableDom = (rankingGroups, departedPlayers) => {
   return dom
 }
 
-const groupRankingByPointsAndBuchholz = (ranking) => {
+const groupRankingByPointsAndBuchholz = (ranking: Ranking) => {
   return groupBy(
     ranking,
     (
-      [thisName, thisPoints, thisBuchholz],
-      [thatName, thatPoints, thatBuchholz]
+      [thisPlayer, thisPoints, thisBuchholz]: RankingRow,
+      [thatPlayer, thatPoints, thatBuchholz]: RankingRow
     ) => thisPoints == thatPoints && thisBuchholz == thatBuchholz
   )
 }
 
-const createRankingTable = (participants, history) => {
+export const createRankingTable = (
+  participants: Player[],
+  history: History
+) => {
   if (!participants) return
 
   const ranking = calculateRanking(participants, history)
@@ -97,13 +141,13 @@ const createRankingTable = (participants, history) => {
       : currentRound
   }
 
-  const dom = domFromHTML(`<div id="ranking-table"></div>`)
+  const dom = htmlElement('div', `<div id="ranking-table"></div>`)
 
   const tournamentFinished = tournamentHasFinished(history, roundCount)
   const showManageButton =
     tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount)
 
-  const elements = [
+  const elements: (HTMLDivElement | HTMLTableRowElement)[] = [
     titleDom(title),
     headingDom(rankedRound, tournamentFinished),
     ...(showManageButton ? [managePlayersButtonDom()] : []),
@@ -111,5 +155,5 @@ const createRankingTable = (participants, history) => {
   ]
 
   dom.replaceChildren(...elements)
-  document.getElementById('tournament-data').replaceChildren(dom)
+  document.getElementById('tournament-data')!.replaceChildren(dom)
 }

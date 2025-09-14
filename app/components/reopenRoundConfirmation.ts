@@ -1,5 +1,15 @@
-const createReopenRoundConfirmation = (roundNumber, openRoundNumber) => {
-  const dom = domFromHTML(`
+import { createRoundView } from './roundView.js'
+
+import { dump } from '../storage.js'
+import { htmlElement } from '../dom.js'
+
+export const createReopenRoundConfirmation = (
+  roundNumber: number,
+  openRoundNumber: number
+) => {
+  const dom = htmlElement(
+    'div',
+    `
     <div id="reopen-round-confirmation">
       <div class="confirmation-body">
         <div class="confirmation-message">
@@ -31,25 +41,26 @@ const createReopenRoundConfirmation = (roundNumber, openRoundNumber) => {
 
       </div>
     </div>
-  `)
+  `
+  )
 
-  document.getElementById('universe').appendChild(dom)
+  document.getElementById('universe')!.appendChild(dom)
 
   document
-    .getElementById('action-reopen-round')
+    .getElementById('action-reopen-round')!
     .addEventListener('click', () => {
       reopenRound(roundNumber)
     })
   document
-    .getElementById('action-abort-reopen-round')
+    .getElementById('action-abort-reopen-round')!
     .addEventListener('click', destroyReopenRoundConfirmation)
 }
 
-const destroyReopenRoundConfirmation = () => {
+export const destroyReopenRoundConfirmation = () => {
   document.getElementById('reopen-round-confirmation')?.remove()
 }
 
-const reopenRound = (roundNumber) => {
+export const reopenRound = (roundNumber: number) => {
   destroyReopenRoundConfirmation()
   dump('correctingRound', roundNumber)
   createRoundView(roundNumber)

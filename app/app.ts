@@ -1,19 +1,38 @@
+import { Tournament, TournamentTitle } from './types'
+import { load, dump, erase, StorageKey, STORAGE_KEYS } from './storage.js'
+import { isTruthy, findDuplicates } from './utils.js'
+import { writeToInputField } from './dom.js'
+
+import {
+  tournamentHasStarted,
+  calculateCurrentRound,
+  setNextRound,
+} from './lib'
+
+import { createAlert } from './components/alert'
+import {
+  createDataForm,
+  readParticipants,
+  onParticipantInputChange,
+  readRoundCount,
+  readTitle,
+} from './components/dataForm'
+import { createHeader } from './components/header'
+import { createRoundView, destroyRoundView } from './components/roundView'
+import {
+  createRoundNavigation,
+  destroyRoundNavigation,
+} from './components/roundNavigation'
+import { createRankingTable } from './components/rankingTable'
+
 window.onload = () => render()
 
-const STORAGE_KEYS = [
-  'history',
-  'participants',
-  'roundCount',
-  'setting',
-  'title',
-]
-
-const render = () => {
+export const render = () => {
   destroyRoundNavigation()
   destroyRoundView()
 
-  const participants = load('participants') || []
-  const history = load('history') || []
+  const participants = load('participants', [])
+  const history = load('history', [])
   const roundCount = load('roundCount')
   const title = load('title')
 
@@ -31,16 +50,16 @@ const render = () => {
   createDataForm()
   dump('history', [])
 
-  title && domWrite('input-title', load('title'))
+  title && writeToInputField('input-title', load('title'))
   participants &&
-    domWrite('input-participants', participants.join('\n')) &&
+    writeToInputField('input-participants', participants.join('\n')) &&
     onParticipantInputChange()
   roundCount &&
-    domWrite('input-round-count', roundCount) &&
+    writeToInputField('input-round-count', String(roundCount)) &&
     createRoundNavigation(roundCount)
 }
 
-const startTournament = () => {
+export const startTournament = () => {
   const history = load('history') || []
 
   if (tournamentHasStarted(history)) return
@@ -70,7 +89,7 @@ const startTournament = () => {
   render()
 }
 
-const createTournament = () => {
+export const createTournament = () => {
   storeTournament()
   for (const key of STORAGE_KEYS) {
     erase(key)
@@ -78,7 +97,7 @@ const createTournament = () => {
   render()
 }
 
-const storeTournament = () => {
+export const storeTournament = () => {
   const history = load('history')
   if (!tournamentHasStarted(history)) return
 
@@ -89,23 +108,24 @@ const storeTournament = () => {
     participants: load('participants'),
     setting: load('setting'),
     roundCount: load('roundCount'),
+    departedPlayers: load('departedPlayers'),
   }
   let storeValue = load('savedTournaments') || {}
   storeValue[title] = tournament
   dump('savedTournaments', storeValue)
 }
 
-const openTournament = (title) => {
+export const openTournament = (title: TournamentTitle) => {
   storeTournament()
 
-  const tournament = load('savedTournaments')[title]
-  for (const key of STORAGE_KEYS) {
+  const tournament: Tournament = load('savedTournaments')[title]
+  for (const key of Object.keys(tournament) as (keyof Tournament)[]) {
     dump(key, tournament[key])
   }
   render()
 }
 
-const downloadJSON = (data, filename) => {
+const downloadJSON = (data: Record<string, any>, filename: string) => {
   const jsonString = JSON.stringify(data, null, 2)
   const blob = new Blob([jsonString], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -119,9 +139,9 @@ const downloadJSON = (data, filename) => {
   URL.revokeObjectURL(url)
 }
 
-const exportTournament = () => {
+export const exportTournament = () => {
   const title = load('title')
-  const data = {}
+  const data: Record<string, any> = {}
 
   for (const key of STORAGE_KEYS) {
     const value = load(key)
@@ -132,12 +152,14 @@ const exportTournament = () => {
   downloadJSON(data, title + '.json')
 }
 
-const openImportFileDialogue = () => {
-  document.getElementById('import-tournament-file-input').click()
+export const openImportFileDialogue = () => {
+  document.getElementById('import-tournament-file-input')!.click()
 }
 
-const importTournament = (event) => {
-  const file = event.target.files[0]
+export const importTournament = (event: Event) => {
+  // This does not contain validation that the stored file complies with the
+  // StorageSchema
+  const file = (event.target as HTMLInputElement).files![0]
 
   if (!file) {
     return
@@ -145,9 +167,9 @@ const importTournament = (event) => {
 
   const reader = new FileReader()
   reader.onload = function (e) {
-    const data = JSON.parse(e.target.result)
+    const data = JSON.parse(e.target!.result as string)
 
-    for (const key of Object.keys(data)) {
+    for (const key of Object.keys(data) as StorageKey[]) {
       const value = data[key]
       dump(key, value)
     }
