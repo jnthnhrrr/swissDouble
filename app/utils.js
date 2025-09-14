@@ -56,6 +56,9 @@ const groupBy = (array, comparator) => {
   return groups
 }
 
+const popRandom = (list) =>
+  list.splice(Math.floor(Math.random() * list.length), 1)[0]
+
 /*************************
  *   KEY-VALUE-STORAGE   *
  ************************/
@@ -108,4 +111,5 @@ const domFromHTML = (html) => {
 
 if (typeof exports !== 'undefined') {
   exports.groupBy = groupBy
+  exports.popRandom = popRandom
 }
