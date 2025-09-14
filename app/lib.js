@@ -33,13 +33,31 @@ const calculateCurrentRound = () => {
   return history.length
 }
 
+const getActiveParticipants = () => {
+  const participants = load('participants')
+  let departedPlayers = load('departedPlayers', {})
+  console.log('participants', participants)
+  console.log('departedPlayers', departedPlayers)
+  departedPlayers = typeof departedPlayers != 'undefined' ? departedPlayers : {}
+  const activeParticipants = participants.filter((participant) => {
+    return !(participant in departedPlayers)
+  })
+  console.log('activeParticipants', activeParticipants)
+  return activeParticipants
+}
+
 const determineNextRound = (participants, history) => {
   const ranking = calculateRanking(participants, history)
   const rankingObject = Object.fromEntries(ranking)
-  const forbiddenPairings = calculateForbiddenPairings(participants, history)
-  const freeGamers = calculateFreeGamers(participants, history)
+  const activeParticipants = getActiveParticipants()
+  console.log('activeParticipants', activeParticipants)
+  const forbiddenPairings = calculateForbiddenPairings(
+    activeParticipants,
+    history
+  )
+  const freeGamers = calculateFreeGamers(activeParticipants, history)
   const pairings = drawPairings(
-    participants,
+    activeParticipants,
     forbiddenPairings,
     freeGamers
   ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
@@ -200,6 +218,15 @@ const calculateRanking = (participants, history) => {
 }
 
 const resetNextRound = (history, setting, roundCount) => {
+  if (typeof history === 'undefined') {
+    history = load('history')
+  }
+  if (typeof setting === 'undefined') {
+    setting = load('setting')
+  }
+  if (typeof roundCount === 'undefined') {
+    roundCount = load('roundCount')
+  }
   history.pop()
   dump('history', history)
   setNextRound(history, setting, roundCount)

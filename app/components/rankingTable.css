@@ -12,6 +12,11 @@
   background: var(--color-subtle);
 }
 
+#ranking-table tr.departed {
+  opacity: 0.6;
+  font-style: italic;
+}
+
 #ranking-table table {
   border-collapse: collapse;
 }

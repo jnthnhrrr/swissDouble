@@ -1,0 +1,68 @@
+.manage-players-body {
+  width: 90vw;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.manage-players-subtitle {
+  color: var(--color-light);
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.manage-players-list {
+  margin: 20px 0;
+}
+
+.manage-player-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background: var(--color-subtle);
+  border-radius: var(--border-radius);
+  min-height: 60px;
+}
+
+.player-info {
+  flex-grow: 1;
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: var(--font-size);
+  margin-bottom: 4px;
+}
+
+.player-points {
+  color: var(--color-light);
+  font-size: 16px;
+}
+
+.remove-player-btn {
+  min-width: 100px;
+  margin-left: 15px;
+  font-size: 16px;
+  padding: 10px 15px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+  .manage-player-row {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    padding: 20px 15px;
+  }
+
+  .player-info {
+    margin-bottom: 15px;
+  }
+
+  .remove-player-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+}

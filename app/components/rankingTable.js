@@ -12,7 +12,23 @@ const headingDom = (round, tournamentIsOver) =>
       </div>
     `)
 
-const tableDom = (rankingGroups) => {
+const managePlayersButtonDom = () => {
+  const dom = domFromHTML(`
+    <div class="flex">
+      <button id="action-manage-players" class="btn btn-action center">
+        Spieler verwalten
+      </button>
+    </div>
+  `)
+
+  dom
+    .querySelector('#action-manage-players')
+    .addEventListener('click', createManagePlayersDialog)
+
+  return dom
+}
+
+const tableDom = (rankingGroups, departedPlayers) => {
   const dom = domFromHTML(`<table class="result-table"></table>`)
   const rows = []
   rows.push(
@@ -29,11 +45,18 @@ const tableDom = (rankingGroups) => {
   let dark = true
   for (const group of rankingGroups) {
     for (const [name, points, buchholz] of group) {
+      const isDeparted = departedPlayers && departedPlayers[name] !== undefined
+      const departedText = isDeparted
+        ? ` (nach Runde ${departedPlayers[name]})`
+        : ''
+
       rows.push(
         domFromHTML(`
-          <tr class="${dark ? 'dark' : 'bright'}">
+          <tr class="${dark ? 'dark' : 'bright'} ${
+            isDeparted ? 'departed' : ''
+          }">
             <td>${rank}</td>
-            <td>${name}</td>
+            <td>${name}${departedText}</td>
             <td>${points}</td>
             <td>${buchholz}</td>
           </tr>
@@ -65,6 +88,8 @@ const createRankingTable = (participants, history) => {
   const title = load('title')
   const roundCount = load('roundCount')
   const currentRound = calculateCurrentRound()
+  const departedPlayers = load('departedPlayers') || {}
+
   let rankedRound = 0
   if (currentRound) {
     rankedRound = roundIsOpen(history[currentRound - 1])
@@ -74,10 +99,17 @@ const createRankingTable = (participants, history) => {
 
   const dom = domFromHTML(`<div id="ranking-table"></div>`)
 
-  dom.replaceChildren(
+  const tournamentFinished = tournamentHasFinished(history, roundCount)
+  const showManageButton =
+    tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount)
+
+  const elements = [
     titleDom(title),
-    headingDom(rankedRound, tournamentHasFinished(history, roundCount)),
-    tableDom(groups)
-  )
+    headingDom(rankedRound, tournamentFinished),
+    ...(showManageButton ? [managePlayersButtonDom()] : []),
+    tableDom(groups, departedPlayers),
+  ]
+
+  dom.replaceChildren(...elements)
   document.getElementById('tournament-data').replaceChildren(dom)
 }

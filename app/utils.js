@@ -61,11 +61,18 @@ const groupBy = (array, comparator) => {
  ************************/
 
 const ROOT = 'swiss-double'
-const getStoreValue = () => JSON.parse(localStorage.getItem(ROOT)) || {}
+const getStoreValue = () => {
+  let value = JSON.parse(localStorage.getItem(ROOT))
+  return value ? value : {}
+}
+
 const setStoreValue = (value) =>
   localStorage.setItem(ROOT, JSON.stringify(value))
 
-const load = (key) => getStoreValue()[key]
+const load = (key, defaultValue) => {
+  const value = getStoreValue()[key]
+  return typeof value === 'undefined' ? defaultValue : value
+}
 const dump = (key, value) => {
   let storeValue = getStoreValue()
   storeValue[key] = value

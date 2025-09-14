@@ -235,6 +235,11 @@ h2 {
   background: var(--color-subtle);
 }
 
+#ranking-table tr.departed {
+  opacity: 0.6;
+  font-style: italic;
+}
+
 #ranking-table table {
   border-collapse: collapse;
 }
@@ -265,6 +270,74 @@ h2 {
 
 #open-dialog .dropdown-dialog-row:hover {
   background: var(--color-subtle-highlight);
+}
+.manage-players-body {
+  width: 90vw;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.manage-players-subtitle {
+  color: var(--color-light);
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+.manage-players-list {
+  margin: 20px 0;
+}
+
+.manage-player-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background: var(--color-subtle);
+  border-radius: var(--border-radius);
+  min-height: 60px;
+}
+
+.player-info {
+  flex-grow: 1;
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: var(--font-size);
+  margin-bottom: 4px;
+}
+
+.player-points {
+  color: var(--color-light);
+  font-size: 16px;
+}
+
+.remove-player-btn {
+  min-width: 100px;
+  margin-left: 15px;
+  font-size: 16px;
+  padding: 10px 15px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+  .manage-player-row {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    padding: 20px 15px;
+  }
+
+  .player-info {
+    margin-bottom: 15px;
+  }
+
+  .remove-player-btn {
+    margin-left: 0;
+    width: 100%;
+  }
 }
 #header {
   width: 100%;
@@ -398,11 +471,18 @@ const groupBy = (array, comparator) => {
  ************************/
 
 const ROOT = 'swiss-double'
-const getStoreValue = () => JSON.parse(localStorage.getItem(ROOT)) || {}
+const getStoreValue = () => {
+  let value = JSON.parse(localStorage.getItem(ROOT))
+  return value ? value : {}
+}
+
 const setStoreValue = (value) =>
   localStorage.setItem(ROOT, JSON.stringify(value))
 
-const load = (key) => getStoreValue()[key]
+const load = (key, defaultValue) => {
+  const value = getStoreValue()[key]
+  return (typeof value === 'undefined') ? defaultValue : value
+}
 const dump = (key, value) => {
   let storeValue = getStoreValue()
   storeValue[key] = value
@@ -474,13 +554,28 @@ const calculateCurrentRound = () => {
   return history.length
 }
 
+const getActiveParticipants = () => {
+  const participants = load("participants")
+  let departedPlayers = load("departedPlayers", {})
+  console.log("participants", participants)
+  console.log("departedPlayers", departedPlayers)
+  departedPlayers = (typeof departedPlayers != 'undefined') ? departedPlayers : {}
+  const activeParticipants = participants.filter((participant) => {
+    return !(participant in departedPlayers)
+  })
+  console.log("activeParticipants", activeParticipants)
+  return activeParticipants
+}
+
 const determineNextRound = (participants, history) => {
   const ranking = calculateRanking(participants, history)
   const rankingObject = Object.fromEntries(ranking)
-  const forbiddenPairings = calculateForbiddenPairings(participants, history)
-  const freeGamers = calculateFreeGamers(participants, history)
+  const activeParticipants = getActiveParticipants()
+  console.log("activeParticipants", activeParticipants)
+  const forbiddenPairings = calculateForbiddenPairings(activeParticipants, history)
+  const freeGamers = calculateFreeGamers(activeParticipants, history)
   const pairings = drawPairings(
-    participants,
+    activeParticipants,
     forbiddenPairings,
     freeGamers
   ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
@@ -641,6 +736,15 @@ const calculateRanking = (participants, history) => {
 }
 
 const resetNextRound = (history, setting, roundCount) => {
+  if (typeof history === 'undefined') {
+    history = load('history')
+  }
+  if (typeof setting === 'undefined') {
+    setting = load('setting')
+  }
+  if (typeof roundCount === 'undefined') {
+    roundCount = load('roundCount')
+  }
   history.pop()
   dump('history', history)
   setNextRound(history, setting, roundCount)
@@ -1120,7 +1224,22 @@ const headingDom = (round, tournamentIsOver) =>
       </div>
     `)
 
-const tableDom = (rankingGroups) => {
+const managePlayersButtonDom = () => {
+  const dom = domFromHTML(`
+    <div class="flex">
+      <button id="action-manage-players" class="btn btn-action center">
+        Spieler verwalten
+      </button>
+    </div>
+  `)
+
+  dom.querySelector('#action-manage-players')
+    .addEventListener('click', createManagePlayersDialog)
+
+  return dom
+}
+
+const tableDom = (rankingGroups, departedPlayers) => {
   const dom = domFromHTML(`<table class="result-table"></table>`)
   const rows = []
   rows.push(
@@ -1137,11 +1256,14 @@ const tableDom = (rankingGroups) => {
   let dark = true
   for (const group of rankingGroups) {
     for (const [name, points, buchholz] of group) {
+      const isDeparted = departedPlayers && departedPlayers[name] !== undefined
+      const departedText = isDeparted ? ` (nach Runde ${departedPlayers[name]})` : ''
+
       rows.push(
         domFromHTML(`
-          <tr class="${dark ? 'dark' : 'bright'}">
+          <tr class="${dark ? 'dark' : 'bright'} ${isDeparted ? 'departed' : ''}">
             <td>${rank}</td>
-            <td>${name}</td>
+            <td>${name}${departedText}</td>
             <td>${points}</td>
             <td>${buchholz}</td>
           </tr>
@@ -1173,6 +1295,8 @@ const createRankingTable = (participants, history) => {
   const title = load('title')
   const roundCount = load('roundCount')
   const currentRound = calculateCurrentRound()
+  const departedPlayers = load('departedPlayers') || {}
+
   let rankedRound = 0
   if (currentRound) {
     rankedRound = roundIsOpen(history[currentRound - 1])
@@ -1182,11 +1306,17 @@ const createRankingTable = (participants, history) => {
 
   const dom = domFromHTML(`<div id="ranking-table"></div>`)
 
-  dom.replaceChildren(
+  const tournamentFinished = tournamentHasFinished(history, roundCount)
+  const showManageButton = tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount)
+
+  const elements = [
     titleDom(title),
-    headingDom(rankedRound, tournamentHasFinished(history, roundCount)),
-    tableDom(groups)
-  )
+    headingDom(rankedRound, tournamentFinished),
+    ...(showManageButton ? [managePlayersButtonDom()] : []),
+    tableDom(groups, departedPlayers)
+  ]
+
+  dom.replaceChildren(...elements)
   document.getElementById('tournament-data').replaceChildren(dom)
 }
 const createOpenDialog = () => {
@@ -1228,6 +1358,96 @@ const createOpenLink = (tournamentKey) => {
   })
 
   return link
+}
+const createManagePlayersDialog = () => {
+  const participants = load('participants') || []
+  const departedPlayers = load('departedPlayers') || {}
+  const currentRound = calculateCurrentRound()
+
+  // Get active players (not yet departed)
+  const activePlayers = participants.filter(player => !departedPlayers[player])
+
+  if (activePlayers.length === 0) {
+    createAlert('Alle Spieler haben das Turnier bereits verlassen.')
+    return
+  }
+
+  const playerRows = activePlayers.map(player => {
+    const ranking = calculateRanking(participants, load('history') || [])
+    const playerRanking = ranking.find(([name]) => name === player)
+    const points = playerRanking ? playerRanking[1] : 0
+
+    return `
+      <div class="manage-player-row">
+        <div class="player-info">
+          <div class="player-name">${player}</div>
+          <div class="player-points">${points} Punkte</div>
+        </div>
+        <button class="btn btn-alert remove-player-btn" data-player="${player}">
+          Entfernen
+        </button>
+      </div>
+    `
+  }).join('')
+
+  const dom = domFromHTML(`
+    <div id="manage-players-dialog" class="alert">
+      <div class="alert-body manage-players-body">
+        <h2>Spieler verwalten</h2>
+        <div class="manage-players-subtitle">
+          Entfernung nach Runde ${currentRound - 1}
+        </div>
+
+        <div class="manage-players-list">
+          ${playerRows}
+        </div>
+
+        <div class="flex">
+          <button id="action-close-manage-players" class="btn btn-action right">
+            Schließen
+          </button>
+        </div>
+      </div>
+    </div>
+  `)
+
+  document.getElementById('universe').appendChild(dom)
+
+  // Add event listeners for remove buttons
+  dom.querySelectorAll('.remove-player-btn').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const playerName = e.target.dataset.player
+      confirmRemovePlayer(playerName, currentRound - 1)
+    })
+  })
+
+// Close dialog listener
+  dom.querySelector('#action-close-manage-players')
+    .addEventListener('click', destroyManagePlayersDialog)
+}
+
+const destroyManagePlayersDialog = () => {
+  document.getElementById('manage-players-dialog')?.remove()
+}
+
+const confirmRemovePlayer = (playerName, afterRound) => {
+  createAlert(`
+    Spieler "${playerName}" nach Runde ${afterRound} entfernen?
+
+    Diese Aktion kann nicht rückgängig gemacht werden.
+    Nach dieser Aktion wird die gegenwärtig offene Runde neu gesetzt.
+    Stell sicher, dass die Runde noch nicht begonnen hat.
+    Entferne den Spieler erst, wenn die Runde abgeschlossen ist.
+  `, () => removePlayer(playerName, afterRound))
+}
+
+const removePlayer = (playerName, afterRound) => {
+  const departedPlayers = load('departedPlayers') || {}
+  departedPlayers[playerName] = afterRound
+  dump('departedPlayers', departedPlayers)
+  destroyManagePlayersDialog()
+  resetNextRound()
+  render()  // Re-render to show updated rankings
 }
 const createHeader = () => {
   const dom = domFromHTML(`
@@ -1368,34 +1588,76 @@ const readParticipants = () =>
 const readTitle = () => domRead('input-title')
 
 const readRoundCount = () => Number(domRead('input-round-count'))
-const createAlert = (message) => {
+const createAlert = (message, callback = null) => {
   message = message.trim()
   const id = randomId()
-  const dom = domFromHTML(`
-    <div id=${id} class="alert">
-      <div class="alert-body">
-        <div class="alert-message">
-          ${message}
-        </div>
 
-        <div class="flex">
-          <button
-            id="action-close-alert"
-            class="btn btn-action right"
-          >
-            OK
-          </button>
+  if (callback) {
+    const dom = domFromHTML(`
+      <div id=${id} class="alert">
+        <div class="alert-body">
+          <div class="alert-message">
+            ${message}
+          </div>
+          <div class="flex">
+            <button
+              id="action-confirm-alert-${id}"
+              class="btn btn-alert"
+            >
+              Ja
+            </button>
+            <button
+              id="action-cancel-alert-${id}"
+              class="btn btn-action right"
+            >
+              Abbrechen
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  `)
+    `)
 
-  document.getElementById('universe').appendChild(dom)
-  document.getElementById(id).addEventListener('click', () => destroyAlert(id))
+    document.getElementById('universe').appendChild(dom)
+
+    document.getElementById(`action-confirm-alert-${id}`).addEventListener('click', () => {
+      destroyAlert(id)
+      callback()
+    })
+
+    document.getElementById(`action-cancel-alert-${id}`).addEventListener('click', () => {
+      destroyAlert(id)
+    })
+
+  } else {
+    const dom = domFromHTML(`
+      <div id=${id} class="alert">
+        <div class="alert-body">
+          <div class="alert-message">
+            ${message}
+          </div>
+          <div class="flex">
+            <button
+              id="action-close-alert-${id}"
+              class="btn btn-action right"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    `)
+
+    document.getElementById('universe').appendChild(dom)
+
+    document.getElementById(`action-close-alert-${id}`).addEventListener('click', () => destroyAlert(id))
+    document.getElementById(id).addEventListener('click', (e) => {
+      if (e.target.id === id) destroyAlert(id)
+    })
+  }
 }
 
 const destroyAlert = (id) => {
-  document.getElementById(id).remove()
+  document.getElementById(id)?.remove()
 }
 </script>
   </head>
