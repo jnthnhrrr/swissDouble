@@ -1,5 +1,5 @@
 let expect = require('chai').expect
-let lib = require('../app/lib')
+let lib = require('../../app/lib')
 
 describe('Determination of Free Game', function () {
   let participants = [
@@ -79,9 +79,7 @@ describe('Determination of Free Game', function () {
 
   describe('calculateFreeGamers', function () {
     it('picks lowest ranked players without free game', function () {
-      expect(lib.calculateFreeGamers(participants, history)).to.be.deep.equal(
-        new Set(['Clara'])
-      )
+      expect(lib.calculateFreeGamers(participants, history)).to.be.deep.equal(new Set(['Clara']))
     })
   })
 })

@@ -3,8 +3,8 @@
   "version": "0.3.0",
   "description": "Swiss-System Style Tournament Software for Teams of Two Players",
   "scripts": {
-    "test": "mocha --reporter spec",
-    "format": "prettier app --no-semi --write",
+    "test": "mocha --reporter spec test/**/*.js",
+    "format": "prettier app --no-semi --write --print-width 80 && prettier test --no-semi --write --print-width 100",
     "build": "node build.js"
   },
   "author": "Jonathan Herrera",

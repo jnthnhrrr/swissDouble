@@ -466,6 +466,9 @@ const groupBy = (array, comparator) => {
   return groups
 }
 
+const popRandom = (list) =>
+  list.splice(Math.floor(Math.random() * list.length), 1)[0]
+
 /*************************
  *   KEY-VALUE-STORAGE   *
  ************************/
@@ -481,7 +484,7 @@ const setStoreValue = (value) =>
 
 const load = (key, defaultValue) => {
   const value = getStoreValue()[key]
-  return (typeof value === 'undefined') ? defaultValue : value
+  return typeof value === 'undefined' ? defaultValue : value
 }
 const dump = (key, value) => {
   let storeValue = getStoreValue()
@@ -517,7 +520,12 @@ const domFromHTML = (html) => {
 }
 
 if (typeof exports !== 'undefined') {
+  exports.isTruthy = isTruthy
+  exports.setDiff = setDiff
   exports.groupBy = groupBy
+  exports.findDuplicates = findDuplicates
+  exports.drawRandom = drawRandom
+  exports.popRandom = popRandom
 }
 // history is an array of rounds.
 // Each round in history is an array of matches.
@@ -540,8 +548,6 @@ if (typeof exports !== 'undefined') {
 
 const tournamentHasStarted = (history) => isTruthy(history)
 
-const drawSetting = (participants) => shuffle(participants)
-
 const tournamentHasFinished = (history, roundCount) => {
   return history.length == roundCount && !roundIsOpen(history[roundCount - 1])
 }
@@ -555,15 +561,12 @@ const calculateCurrentRound = () => {
 }
 
 const getActiveParticipants = () => {
-  const participants = load("participants")
-  let departedPlayers = load("departedPlayers", {})
-  console.log("participants", participants)
-  console.log("departedPlayers", departedPlayers)
-  departedPlayers = (typeof departedPlayers != 'undefined') ? departedPlayers : {}
+  const participants = load('participants')
+  let departedPlayers = load('departedPlayers', {})
+  departedPlayers = typeof departedPlayers != 'undefined' ? departedPlayers : {}
   const activeParticipants = participants.filter((participant) => {
     return !(participant in departedPlayers)
   })
-  console.log("activeParticipants", activeParticipants)
   return activeParticipants
 }
 
@@ -571,14 +574,21 @@ const determineNextRound = (participants, history) => {
   const ranking = calculateRanking(participants, history)
   const rankingObject = Object.fromEntries(ranking)
   const activeParticipants = getActiveParticipants()
-  console.log("activeParticipants", activeParticipants)
-  const forbiddenPairings = calculateForbiddenPairings(activeParticipants, history)
-  const freeGamers = calculateFreeGamers(activeParticipants, history)
-  const pairings = drawPairings(
+  const forbiddenPairings = calculateForbiddenPairings(
     activeParticipants,
-    forbiddenPairings,
-    freeGamers
-  ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
+    history
+  )
+  const freeGamers = calculateFreeGamers(activeParticipants, history)
+  let pairings
+  if (history.length == 0) {
+    pairings = drawPairingsForFirstRound(participants, freeGamers)
+  } else {
+    pairings = drawPairings(
+      activeParticipants,
+      forbiddenPairings,
+      freeGamers
+    ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
+  }
   let matches = []
   for (let i = 0; i < pairings.length; i += 2) {
     matches.push({
@@ -630,6 +640,27 @@ const drawPairings = (participants, forbiddenPairings, freeGamers) => {
     const playerTwo = drawRandom(possiblePartners)
     players.delete(playerTwo)
     pairings.push([playerOne, playerTwo])
+  }
+  return pairings
+}
+
+const drawPairingsForFirstRound = (participants, freeGamers) => {
+  // This implements the requirement that in the first round, we want to pair
+  // each player from the top half of the list with a player from the bottom
+  // half.
+  //
+  // Here, there is no need to check for forbiddenPairings because we are in
+  // first round
+
+  participants = new Set(participants)
+  const players = [...setDiff(participants, freeGamers)]
+  let pairings = []
+  const breakIndex = players.length / 2
+  const topHalf = players.slice(0, breakIndex)
+  const bottomHalf = players.slice(breakIndex, players.length)
+  for (const topPlayer of topHalf) {
+    const bottomPlayer = popRandom(bottomHalf)
+    pairings.push([topPlayer, bottomPlayer])
   }
   return pairings
 }
@@ -763,6 +794,7 @@ if (typeof exports !== 'undefined') {
   exports.tournamentHasStarted = tournamentHasStarted
   exports.playerHadFreeGame = playerHadFreeGame
   exports.calculateFreeGamers = calculateFreeGamers
+  exports.determineNextRound = determineNextRound
 }
 window.onload = () => render()
 
@@ -824,7 +856,7 @@ const startTournament = () => {
     return
   }
 
-  const setting = drawSetting(participants)
+  const setting = [...participants]
   const roundCount = readRoundCount()
   dump('participants', participants)
   dump('setting', setting)
@@ -1233,7 +1265,8 @@ const managePlayersButtonDom = () => {
     </div>
   `)
 
-  dom.querySelector('#action-manage-players')
+  dom
+    .querySelector('#action-manage-players')
     .addEventListener('click', createManagePlayersDialog)
 
   return dom
@@ -1257,11 +1290,15 @@ const tableDom = (rankingGroups, departedPlayers) => {
   for (const group of rankingGroups) {
     for (const [name, points, buchholz] of group) {
       const isDeparted = departedPlayers && departedPlayers[name] !== undefined
-      const departedText = isDeparted ? ` (nach Runde ${departedPlayers[name]})` : ''
+      const departedText = isDeparted
+        ? ` (nach Runde ${departedPlayers[name]})`
+        : ''
 
       rows.push(
         domFromHTML(`
-          <tr class="${dark ? 'dark' : 'bright'} ${isDeparted ? 'departed' : ''}">
+          <tr class="${dark ? 'dark' : 'bright'} ${
+            isDeparted ? 'departed' : ''
+          }">
             <td>${rank}</td>
             <td>${name}${departedText}</td>
             <td>${points}</td>
@@ -1307,13 +1344,14 @@ const createRankingTable = (participants, history) => {
   const dom = domFromHTML(`<div id="ranking-table"></div>`)
 
   const tournamentFinished = tournamentHasFinished(history, roundCount)
-  const showManageButton = tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount)
+  const showManageButton =
+    tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount)
 
   const elements = [
     titleDom(title),
     headingDom(rankedRound, tournamentFinished),
     ...(showManageButton ? [managePlayersButtonDom()] : []),
-    tableDom(groups, departedPlayers)
+    tableDom(groups, departedPlayers),
   ]
 
   dom.replaceChildren(...elements)
@@ -1365,19 +1403,22 @@ const createManagePlayersDialog = () => {
   const currentRound = calculateCurrentRound()
 
   // Get active players (not yet departed)
-  const activePlayers = participants.filter(player => !departedPlayers[player])
+  const activePlayers = participants.filter(
+    (player) => !departedPlayers[player]
+  )
 
   if (activePlayers.length === 0) {
     createAlert('Alle Spieler haben das Turnier bereits verlassen.')
     return
   }
 
-  const playerRows = activePlayers.map(player => {
-    const ranking = calculateRanking(participants, load('history') || [])
-    const playerRanking = ranking.find(([name]) => name === player)
-    const points = playerRanking ? playerRanking[1] : 0
+  const playerRows = activePlayers
+    .map((player) => {
+      const ranking = calculateRanking(participants, load('history') || [])
+      const playerRanking = ranking.find(([name]) => name === player)
+      const points = playerRanking ? playerRanking[1] : 0
 
-    return `
+      return `
       <div class="manage-player-row">
         <div class="player-info">
           <div class="player-name">${player}</div>
@@ -1388,7 +1429,8 @@ const createManagePlayersDialog = () => {
         </button>
       </div>
     `
-  }).join('')
+    })
+    .join('')
 
   const dom = domFromHTML(`
     <div id="manage-players-dialog" class="alert">
@@ -1414,15 +1456,16 @@ const createManagePlayersDialog = () => {
   document.getElementById('universe').appendChild(dom)
 
   // Add event listeners for remove buttons
-  dom.querySelectorAll('.remove-player-btn').forEach(button => {
+  dom.querySelectorAll('.remove-player-btn').forEach((button) => {
     button.addEventListener('click', (e) => {
       const playerName = e.target.dataset.player
       confirmRemovePlayer(playerName, currentRound - 1)
     })
   })
 
-// Close dialog listener
-  dom.querySelector('#action-close-manage-players')
+  // Close dialog listener
+  dom
+    .querySelector('#action-close-manage-players')
     .addEventListener('click', destroyManagePlayersDialog)
 }
 
@@ -1431,14 +1474,17 @@ const destroyManagePlayersDialog = () => {
 }
 
 const confirmRemovePlayer = (playerName, afterRound) => {
-  createAlert(`
+  createAlert(
+    `
     Spieler "${playerName}" nach Runde ${afterRound} entfernen?
 
     Diese Aktion kann nicht rückgängig gemacht werden.
     Nach dieser Aktion wird die gegenwärtig offene Runde neu gesetzt.
     Stell sicher, dass die Runde noch nicht begonnen hat.
     Entferne den Spieler erst, wenn die Runde abgeschlossen ist.
-  `, () => removePlayer(playerName, afterRound))
+  `,
+    () => removePlayer(playerName, afterRound)
+  )
 }
 
 const removePlayer = (playerName, afterRound) => {
@@ -1447,7 +1493,7 @@ const removePlayer = (playerName, afterRound) => {
   dump('departedPlayers', departedPlayers)
   destroyManagePlayersDialog()
   resetNextRound()
-  render()  // Re-render to show updated rankings
+  render() // Re-render to show updated rankings
 }
 const createHeader = () => {
   const dom = domFromHTML(`
@@ -1619,15 +1665,18 @@ const createAlert = (message, callback = null) => {
 
     document.getElementById('universe').appendChild(dom)
 
-    document.getElementById(`action-confirm-alert-${id}`).addEventListener('click', () => {
-      destroyAlert(id)
-      callback()
-    })
+    document
+      .getElementById(`action-confirm-alert-${id}`)
+      .addEventListener('click', () => {
+        destroyAlert(id)
+        callback()
+      })
 
-    document.getElementById(`action-cancel-alert-${id}`).addEventListener('click', () => {
-      destroyAlert(id)
-    })
-
+    document
+      .getElementById(`action-cancel-alert-${id}`)
+      .addEventListener('click', () => {
+        destroyAlert(id)
+      })
   } else {
     const dom = domFromHTML(`
       <div id=${id} class="alert">
@@ -1649,7 +1698,9 @@ const createAlert = (message, callback = null) => {
 
     document.getElementById('universe').appendChild(dom)
 
-    document.getElementById(`action-close-alert-${id}`).addEventListener('click', () => destroyAlert(id))
+    document
+      .getElementById(`action-close-alert-${id}`)
+      .addEventListener('click', () => destroyAlert(id))
     document.getElementById(id).addEventListener('click', (e) => {
       if (e.target.id === id) destroyAlert(id)
     })

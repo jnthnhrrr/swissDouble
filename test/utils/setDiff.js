@@ -1,5 +1,5 @@
 let expect = require('chai').expect
-let utils = require('../app/utils')
+let utils = require('../../app/utils')
 
 describe('setDiff', () => {
   describe('when both sets are empty', () => {

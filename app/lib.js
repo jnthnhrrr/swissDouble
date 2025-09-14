@@ -19,8 +19,6 @@
 
 const tournamentHasStarted = (history) => isTruthy(history)
 
-const drawSetting = (participants) => shuffle(participants)
-
 const tournamentHasFinished = (history, roundCount) => {
   return history.length == roundCount && !roundIsOpen(history[roundCount - 1])
 }
@@ -36,13 +34,10 @@ const calculateCurrentRound = () => {
 const getActiveParticipants = () => {
   const participants = load('participants')
   let departedPlayers = load('departedPlayers', {})
-  console.log('participants', participants)
-  console.log('departedPlayers', departedPlayers)
   departedPlayers = typeof departedPlayers != 'undefined' ? departedPlayers : {}
   const activeParticipants = participants.filter((participant) => {
     return !(participant in departedPlayers)
   })
-  console.log('activeParticipants', activeParticipants)
   return activeParticipants
 }
 
@@ -50,17 +45,21 @@ const determineNextRound = (participants, history) => {
   const ranking = calculateRanking(participants, history)
   const rankingObject = Object.fromEntries(ranking)
   const activeParticipants = getActiveParticipants()
-  console.log('activeParticipants', activeParticipants)
   const forbiddenPairings = calculateForbiddenPairings(
     activeParticipants,
     history
   )
   const freeGamers = calculateFreeGamers(activeParticipants, history)
-  const pairings = drawPairings(
-    activeParticipants,
-    forbiddenPairings,
-    freeGamers
-  ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
+  let pairings
+  if (history.length == 0) {
+    pairings = drawPairingsForFirstRound(participants, freeGamers)
+  } else {
+    pairings = drawPairings(
+      activeParticipants,
+      forbiddenPairings,
+      freeGamers
+    ).sort((team) => rankingObject[team[0]] + rankingObject[team[1]])
+  }
   let matches = []
   for (let i = 0; i < pairings.length; i += 2) {
     matches.push({
@@ -112,6 +111,27 @@ const drawPairings = (participants, forbiddenPairings, freeGamers) => {
     const playerTwo = drawRandom(possiblePartners)
     players.delete(playerTwo)
     pairings.push([playerOne, playerTwo])
+  }
+  return pairings
+}
+
+const drawPairingsForFirstRound = (participants, freeGamers) => {
+  // This implements the requirement that in the first round, we want to pair
+  // each player from the top half of the list with a player from the bottom
+  // half.
+  //
+  // Here, there is no need to check for forbiddenPairings because we are in
+  // first round
+
+  participants = new Set(participants)
+  const players = [...setDiff(participants, freeGamers)]
+  let pairings = []
+  const breakIndex = players.length / 2
+  const topHalf = players.slice(0, breakIndex)
+  const bottomHalf = players.slice(breakIndex, players.length)
+  for (const topPlayer of topHalf) {
+    const bottomPlayer = popRandom(bottomHalf)
+    pairings.push([topPlayer, bottomPlayer])
   }
   return pairings
 }
@@ -245,4 +265,5 @@ if (typeof exports !== 'undefined') {
   exports.tournamentHasStarted = tournamentHasStarted
   exports.playerHadFreeGame = playerHadFreeGame
   exports.calculateFreeGamers = calculateFreeGamers
+  exports.determineNextRound = determineNextRound
 }

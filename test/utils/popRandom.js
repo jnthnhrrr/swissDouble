@@ -1,5 +1,5 @@
 let expect = require('chai').expect
-let utils = require('../app/utils')
+let utils = require('../../app/utils')
 
 describe('popRandom', () => {
   describe('when array is empty', () => {
@@ -15,7 +15,7 @@ describe('popRandom', () => {
       expect(list).to.not.include(pick)
     })
 
-      it('returns an element that was originally in the array', () => {
+    it('returns an element that was originally in the array', () => {
       const originalList = [1, 2, 3, 4]
       const list = [...originalList]
       const pick = utils.popRandom(list)

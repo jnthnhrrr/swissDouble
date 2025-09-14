@@ -58,7 +58,7 @@ const startTournament = () => {
     return
   }
 
-  const setting = drawSetting(participants)
+  const setting = [...participants]
   const roundCount = readRoundCount()
   dump('participants', participants)
   dump('setting', setting)

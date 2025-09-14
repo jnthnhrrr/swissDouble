@@ -110,9 +110,9 @@ const domFromHTML = (html) => {
 }
 
 if (typeof exports !== 'undefined') {
+  exports.isTruthy = isTruthy
   exports.setDiff = setDiff
   exports.groupBy = groupBy
-  exports.shuffle = shuffle
   exports.findDuplicates = findDuplicates
   exports.drawRandom = drawRandom
   exports.popRandom = popRandom

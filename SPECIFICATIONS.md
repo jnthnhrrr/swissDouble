@@ -1,6 +1,8 @@
 # Partnering
 
 1. Team partners are assigned randomly each round.
+2. In the first round, each player from the top half of the participants list is
+   assigned a partner from the bottom half of the list.
 2. No two players are partnered more than once in a tournament.
 3. The partnering is independent from the points or Buchholz ranking players
    have, with one exception:
@@ -10,9 +12,9 @@
 # Setting
 
 1. After determining the partners for the next round, the new round is set
-   according to the logic of Swiss System: Each team plays against a team with
-   the same amount of points. If this is not possible, the setting is chosen
-   which minimises the difference.
+   according to "power pairing" (aka "Swiss System"): Each team plays against a
+   team with the same amount of points. If this is not possible, the setting is
+   chosen which minimises the difference.
 
 2. In the current implementation, there are two notable differences from Swiss
    System
