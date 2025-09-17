@@ -191,9 +191,9 @@ export const destroyRoundView = () =>
 
 const closeRound = (roundNumber: number) => {
   const history = load('history')
-  const setting = load('setting')
   const roundCount = load('roundCount')
   const correctingThisRound = load('correctingRound') != undefined
+  const participants = load('participants')
 
   const round = history[roundNumber - 1]
   let index = 0
@@ -218,9 +218,9 @@ const closeRound = (roundNumber: number) => {
   dump('history', history)
   if (correctingThisRound) {
     erase('correctingRound')
-    resetNextRound(history, setting, roundCount)
+    resetNextRound(history, participants, roundCount)
   }
-  setNextRound(history, setting, roundCount)
+  setNextRound(history, participants, roundCount)
   render()
 }
 

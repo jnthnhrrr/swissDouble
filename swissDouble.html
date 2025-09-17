@@ -415,7 +415,6 @@ h2 {
     "history",
     "participants",
     "roundCount",
-    "setting",
     "title",
     "departedPlayers",
     "savedTournaments",
@@ -695,23 +694,26 @@ h2 {
     ]);
     return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2]);
   };
-  var resetNextRound = (history, setting, roundCount) => {
+  var resetNextRound = (history, participants, roundCount) => {
     if (typeof history === "undefined") {
       history = load("history");
     }
-    if (typeof setting === "undefined") {
-      setting = load("setting");
+    if (typeof participants === "undefined") {
+      participants = load("participants");
     }
     if (typeof roundCount === "undefined") {
       roundCount = load("roundCount");
     }
     history.pop();
     dump("history", history);
-    setNextRound(history, setting, roundCount);
+    setNextRound(history, participants, roundCount);
   };
-  var setNextRound = (history, setting, roundCount) => {
+  var setNextRound = (history, participants, roundCount) => {
     if (calculateCurrentRound() == roundCount) return;
-    const newHistory = [...history, determineNextRound(setting, history)];
+    const newHistory = [
+      ...history,
+      determineNextRound(participants, history)
+    ];
     dump("history", newHistory);
   };
 
@@ -1186,9 +1188,9 @@ h2 {
   var destroyRoundView = () => document.getElementById("round-view")?.remove();
   var closeRound = (roundNumber) => {
     const history = load("history");
-    const setting = load("setting");
     const roundCount = load("roundCount");
     const correctingThisRound = load("correctingRound") != void 0;
+    const participants = load("participants");
     const round = history[roundNumber - 1];
     let index = 0;
     for (const result of document.querySelectorAll(
@@ -1208,9 +1210,9 @@ h2 {
     dump("history", history);
     if (correctingThisRound) {
       erase("correctingRound");
-      resetNextRound(history, setting, roundCount);
+      resetNextRound(history, participants, roundCount);
     }
-    setNextRound(history, setting, roundCount);
+    setNextRound(history, participants, roundCount);
     render();
   };
   var attemptReopenRound = (roundNumber) => {
@@ -1426,8 +1428,8 @@ h2 {
     const title = load("title");
     createHeader();
     if (tournamentHasStarted(history)) {
-      const setting = load("setting") || [];
-      createRankingTable(setting, history);
+      const participants2 = load("participants") || [];
+      createRankingTable(participants2, history);
       createRoundNavigation(roundCount);
       createRoundView(calculateCurrentRound());
       return;
@@ -1453,14 +1455,12 @@ h2 {
     `);
       return;
     }
-    const setting = [...participants];
     const roundCount = readRoundCount();
     dump("participants", participants);
-    dump("setting", setting);
     dump("roundCount", roundCount);
     dump("title", readTitle());
     dump("history", history);
-    setNextRound(history, setting, roundCount);
+    setNextRound(history, participants, roundCount);
     render();
   };
   var createTournament = () => {
@@ -1478,7 +1478,6 @@ h2 {
       title,
       history: load("history"),
       participants: load("participants"),
-      setting: load("setting"),
       roundCount: load("roundCount"),
       departedPlayers: load("departedPlayers")
     };

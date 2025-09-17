@@ -258,29 +258,32 @@ export const calculateRanking = (
 
 export const resetNextRound = (
   history?: History,
-  setting?: Player[],
+  participants?: Player[],
   roundCount?: number
 ) => {
   if (typeof history === 'undefined') {
     history = load('history') as History
   }
-  if (typeof setting === 'undefined') {
-    setting = load('setting') as Player[]
+  if (typeof participants === 'undefined') {
+    participants = load('participants') as Player[]
   }
   if (typeof roundCount === 'undefined') {
     roundCount = load('roundCount') as number
   }
   history.pop()
   dump('history', history)
-  setNextRound(history, setting, roundCount)
+  setNextRound(history, participants, roundCount)
 }
 
 export const setNextRound = (
   history: History,
-  setting: Player[],
+  participants: Player[],
   roundCount: number
 ) => {
   if (calculateCurrentRound() == roundCount) return
-  const newHistory: History = [...history, determineNextRound(setting, history)]
+  const newHistory: History = [
+    ...history,
+    determineNextRound(participants, history),
+  ]
   dump('history', newHistory)
 }

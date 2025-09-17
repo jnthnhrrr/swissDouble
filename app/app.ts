@@ -39,9 +39,9 @@ export const render = () => {
   createHeader()
 
   if (tournamentHasStarted(history)) {
-    const setting = load('setting') || []
+    const participants = load('participants') || []
 
-    createRankingTable(setting, history)
+    createRankingTable(participants, history)
     createRoundNavigation(roundCount)
     createRoundView(calculateCurrentRound())
     return
@@ -77,15 +77,13 @@ export const startTournament = () => {
     return
   }
 
-  const setting = [...participants]
   const roundCount = readRoundCount()
   dump('participants', participants)
-  dump('setting', setting)
   dump('roundCount', roundCount)
   dump('title', readTitle())
   dump('history', history)
 
-  setNextRound(history, setting, roundCount)
+  setNextRound(history, participants, roundCount)
   render()
 }
 
@@ -106,7 +104,6 @@ export const storeTournament = () => {
     title: title,
     history: load('history'),
     participants: load('participants'),
-    setting: load('setting'),
     roundCount: load('roundCount'),
     departedPlayers: load('departedPlayers'),
   }

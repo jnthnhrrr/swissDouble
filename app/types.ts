@@ -28,7 +28,6 @@ export interface Tournament {
   title: TournamentTitle
   history: History
   participants: Player[]
-  setting: Player[]
   roundCount: number
   departedPlayers: DepartedPlayersRecord
 }

@@ -10,7 +10,6 @@ export const STORAGE_KEYS: StorageKey[] = [
   'history',
   'participants',
   'roundCount',
-  'setting',
   'title',
   'departedPlayers',
   'savedTournaments',
