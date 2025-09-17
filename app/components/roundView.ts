@@ -1,22 +1,18 @@
-import { createAlert } from './alert.js'
-import { highlightRoundNavItem } from './roundNavigation.js'
+import { createAlert } from './alert'
+import { highlightRoundNavItem } from './roundNavigation'
 import {
   reopenRound,
   createReopenRoundConfirmation,
-} from './reopenRoundConfirmation.js'
+} from './reopenRoundConfirmation'
 
-import type { FreeGameMatch, RegularMatch } from '../types.js'
-import { load, dump, erase } from '../storage.js'
-import { isTruthy } from '../utils.js'
-import { htmlElement } from '../dom.js'
-import {
-  calculateCurrentRound,
-  resetNextRound,
-  setNextRound,
-  tournamentHasFinished,
-} from '../lib.js'
+import type { FreeGameMatch, RegularMatch } from '../types'
+import { resetNextRound, setNextRound } from '../round'
+import { calculateCurrentRound, tournamentHasFinished } from '../tournament'
+import { load, dump, erase } from '../storage'
+import { isTruthy } from '../utils'
+import { htmlElement } from '../dom'
 
-import { render } from '../app.js'
+import { render } from '../app'
 
 const freeGameDom = (match: FreeGameMatch) =>
   htmlElement(

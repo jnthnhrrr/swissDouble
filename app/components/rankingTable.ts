@@ -11,12 +11,12 @@ import { load } from '../storage'
 import { groupBy } from '../utils'
 import { htmlElement } from '../dom'
 import {
-  roundIsOpen,
-  calculateRanking,
   calculateCurrentRound,
   tournamentHasStarted,
   tournamentHasFinished,
-} from '../lib'
+} from '../tournament'
+import { calculateRanking } from '../ranking'
+import { roundIsOpen } from '../round'
 
 const titleDom = (title: string) =>
   htmlElement(

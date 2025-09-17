@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { roundIsOpen } from '../../dist/lib.js'
+import { roundIsOpen } from '../../../dist/round.js'
 
 describe('roundIsOpen', () => {
   describe('when round contains free games', () => {

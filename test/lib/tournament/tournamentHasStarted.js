@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { tournamentHasStarted } from '../../dist/lib.js'
+import { tournamentHasStarted } from '../../../dist/tournament.js'
 
 describe('tournamentHasStarted', () => {
   describe('when there is no history', () => {

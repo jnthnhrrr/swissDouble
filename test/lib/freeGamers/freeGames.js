@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { calculateFreeGamers, playerHadFreeGame } from '../../dist/lib.js'
+import { calculateFreeGamers, playerHadFreeGame } from '../../../dist/freeGamers.js'
 
 describe('Determination of Free Game', function () {
   let participants = [
@@ -79,7 +79,7 @@ describe('Determination of Free Game', function () {
 
   describe('calculateFreeGamers', function () {
     it('picks lowest ranked players without free game', function () {
-      expect(calculateFreeGamers(participants, history)).to.be.deep.equal(new Set(['Clara']))
+      expect(calculateFreeGamers(participants, history)).to.be.deep.equal(['Clara'])
     })
   })
 })

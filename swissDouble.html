@@ -505,138 +505,7 @@ h2 {
     return element;
   }
 
-  // app/lib.ts
-  var tournamentHasStarted = (history) => isTruthy(history);
-  var tournamentHasFinished = (history, roundCount) => {
-    return history.length == roundCount && !roundIsOpen(history[roundCount - 1]);
-  };
-  var roundIsOpen = (round) => round.some((match) => match.winningTeam === null);
-  var calculateCurrentRound = () => {
-    const history = load("history");
-    return history.length;
-  };
-  var getActiveParticipants = () => {
-    const participants = load("participants");
-    let departedPlayers = load("departedPlayers", {});
-    departedPlayers = typeof departedPlayers != "undefined" ? departedPlayers : {};
-    const activeParticipants = participants.filter((participant) => {
-      return !(participant in departedPlayers);
-    });
-    return activeParticipants;
-  };
-  var determineNextRound = (participants, history) => {
-    const ranking = calculateRanking(participants, history);
-    const rankingObject = Object.fromEntries(ranking);
-    const activeParticipants = getActiveParticipants();
-    const forbiddenPairings = calculateForbiddenPairings(
-      activeParticipants,
-      history
-    );
-    const freeGamers = calculateFreeGamers(activeParticipants, history);
-    let pairings;
-    if (history.length == 0) {
-      pairings = drawPairingsForFirstRound(participants, freeGamers);
-    } else {
-      pairings = drawPairings(activeParticipants, forbiddenPairings, [
-        ...freeGamers
-      ]).sort((team) => rankingObject[team[0]] + rankingObject[team[1]]);
-    }
-    let matches = [];
-    for (let i = 0; i < pairings.length; i += 2) {
-      matches.push({
-        teams: [pairings[i], pairings[i + 1]],
-        winningTeam: null
-      });
-    }
-    for (const freeGamer of freeGamers) {
-      matches.push({
-        isFreeGame: true,
-        player: freeGamer
-      });
-    }
-    return matches;
-  };
-  var calculateForbiddenPairings = (participants, history) => {
-    let forbiddenPartners = {};
-    for (const participant of participants) {
-      forbiddenPartners[participant] = /* @__PURE__ */ new Set([participant]);
-    }
-    for (const round of history) {
-      for (const match of round) {
-        if ("isFreeGame" in match) {
-          continue;
-        }
-        for (const team of match.teams) {
-          forbiddenPartners[team[0]].add(team[1]);
-          forbiddenPartners[team[1]].add(team[0]);
-        }
-      }
-    }
-    return forbiddenPartners;
-  };
-  var drawPairings = (participants, forbiddenPairings, freeGamers) => {
-    participants = [...new Set(participants)];
-    const players = setDiff(participants, freeGamers);
-    let pairings = [];
-    while (players.size > 0) {
-      const [playerOne] = players;
-      players.delete(playerOne);
-      const possiblePartners = setDiff(
-        [...players],
-        [...forbiddenPairings[playerOne]]
-      );
-      if (possiblePartners.size == 0) {
-        return drawPairings(participants, forbiddenPairings, freeGamers);
-      }
-      const playerTwo = drawRandom(possiblePartners);
-      players.delete(playerTwo);
-      pairings.push([playerOne, playerTwo]);
-    }
-    return pairings;
-  };
-  var drawPairingsForFirstRound = (participants, freeGamers) => {
-    const players = [...setDiff(participants, [...freeGamers])];
-    let pairings = [];
-    const breakIndex = players.length / 2;
-    const topHalf = players.slice(0, breakIndex);
-    const bottomHalf = players.slice(breakIndex, players.length);
-    for (const topPlayer of topHalf) {
-      const bottomPlayer = popRandom(bottomHalf);
-      pairings.push([topPlayer, bottomPlayer]);
-    }
-    return pairings;
-  };
-  var calculateFreeGamers = (participants, history) => {
-    let ranking = calculateRanking(participants, history);
-    const participantCount = participants.length;
-    const freeGamesCount = participantCount % 4;
-    let freeGamers = /* @__PURE__ */ new Set([]);
-    if (freeGamesCount == 0) {
-      return freeGamers;
-    }
-    for (const [player, _] of ranking.reverse()) {
-      if (!playerHadFreeGame(player, history)) {
-        freeGamers.add(player);
-      }
-      if (freeGamers.size == freeGamesCount) {
-        return freeGamers;
-      }
-    }
-    return freeGamers;
-  };
-  var playerHadFreeGame = (player, history) => {
-    for (const round of history) {
-      for (const match of round) {
-        if (!("isFreeGame" in match)) {
-          continue;
-        }
-        if (match.player == player) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
+  // app/ranking.ts
   var calculatePoints = (participants, history) => {
     let ranking = {};
     for (const participant of participants) {
@@ -694,6 +563,169 @@ h2 {
     ]);
     return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2]);
   };
+  var sortTeamsByRanking = (teams, ranking) => {
+    const rankingMap = {};
+    for (const [player, points, buchholz] of ranking) {
+      rankingMap[player] = [points, buchholz];
+    }
+    teams.sort((thisTeam, otherTeam) => {
+      const thisTeamPoints = rankingMap[thisTeam[0]][0] + rankingMap[thisTeam[1]][0];
+      const otherTeamPoints = rankingMap[otherTeam[0]][0] + rankingMap[otherTeam[1]][0];
+      const thisTeamBuchholz = rankingMap[thisTeam[0]][1] + rankingMap[thisTeam[1]][1];
+      const otherTeamBuchholz = rankingMap[otherTeam[0]][1] + rankingMap[otherTeam[1]][1];
+      if (thisTeamPoints == otherTeamPoints) {
+        return thisTeamBuchholz > otherTeamBuchholz ? -1 : 1;
+      }
+      return thisTeamPoints > otherTeamPoints ? -1 : 1;
+    });
+    return teams;
+  };
+
+  // app/freeGamers.ts
+  var calculateFreeGamers = (participants, history) => {
+    let ranking = calculateRanking(participants, history);
+    const participantCount = participants.length;
+    const freeGamesCount = participantCount % 4;
+    let freeGamers = [];
+    if (freeGamesCount == 0) {
+      return freeGamers;
+    }
+    for (const [player, _] of ranking.reverse()) {
+      if (!playerHadFreeGame(player, history)) {
+        freeGamers.push(player);
+      }
+      if (freeGamers.length == freeGamesCount) {
+        return freeGamers;
+      }
+    }
+    return freeGamers;
+  };
+  var playerHadFreeGame = (player, history) => {
+    for (const round of history) {
+      for (const match of round) {
+        if (!("isFreeGame" in match)) {
+          continue;
+        }
+        if (match.player == player) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  // app/tournament.ts
+  var tournamentHasStarted = (history) => isTruthy(history);
+  var tournamentHasFinished = (history, roundCount) => {
+    return history.length == roundCount && !roundIsOpen(history[roundCount - 1]);
+  };
+  var calculateCurrentRound = () => {
+    const history = load("history");
+    return history.length;
+  };
+  var getActiveParticipants = () => {
+    const participants = load("participants");
+    let departedPlayers = load("departedPlayers", {});
+    return participants.filter((participant) => {
+      return !(participant in departedPlayers);
+    });
+  };
+
+  // app/round.ts
+  var determineNextRound = (participants, history) => {
+    let [teams, freeGamers] = determineTeams(participants, history);
+    let ranking = calculateRanking(participants, history);
+    return [
+      ...calculatePowerPairing(teams, ranking),
+      ...freeGameMatches(freeGamers)
+    ];
+  };
+  var freeGameMatches = (freeGamers) => {
+    let matches = [];
+    for (const freeGamer of freeGamers) {
+      matches.push({
+        isFreeGame: true,
+        player: freeGamer
+      });
+    }
+    return matches;
+  };
+  var determineTeams = (participants, history) => {
+    const activeParticipants = getActiveParticipants();
+    const forbiddenPairings = calculateForbiddenPartners(
+      activeParticipants,
+      history
+    );
+    const freeGamers = calculateFreeGamers(activeParticipants, history);
+    if (history.length == 0) {
+      return [determineTeamsForFirstRound(participants, freeGamers), freeGamers];
+    }
+    return [
+      drawTeams(activeParticipants, forbiddenPairings, [...freeGamers]),
+      [...freeGamers]
+    ];
+  };
+  var drawTeams = (participants, forbiddenPartners, freeGamers) => {
+    const players = setDiff(participants, freeGamers);
+    let teams = [];
+    while (players.size > 0) {
+      const [playerOne] = players;
+      players.delete(playerOne);
+      const possiblePartners = setDiff(
+        [...players],
+        [...forbiddenPartners[playerOne]]
+      );
+      if (possiblePartners.size == 0) {
+        return drawTeams(participants, forbiddenPartners, freeGamers);
+      }
+      const playerTwo = drawRandom(possiblePartners);
+      players.delete(playerTwo);
+      teams.push([playerOne, playerTwo]);
+    }
+    return teams;
+  };
+  var determineTeamsForFirstRound = (participants, freeGamers) => {
+    const players = [...setDiff(participants, freeGamers)];
+    let teams = [];
+    const breakIndex = players.length / 2;
+    const topHalf = players.slice(0, breakIndex);
+    const bottomHalf = players.slice(breakIndex, players.length);
+    for (const topPlayer of topHalf) {
+      const bottomPlayer = popRandom(bottomHalf);
+      teams.push([topPlayer, bottomPlayer]);
+    }
+    return teams;
+  };
+  var calculatePowerPairing = (teams, ranking) => {
+    teams = sortTeamsByRanking(teams, ranking);
+    let matches = [];
+    for (let i = 0; i < teams.length; i += 2) {
+      matches.push({
+        teams: [teams[i], teams[i + 1]],
+        winningTeam: null
+      });
+    }
+    return matches;
+  };
+  var calculateForbiddenPartners = (participants, history) => {
+    let forbiddenPartners = {};
+    for (const participant of participants) {
+      forbiddenPartners[participant] = /* @__PURE__ */ new Set([participant]);
+    }
+    for (const round of history) {
+      for (const match of round) {
+        if ("isFreeGame" in match) {
+          continue;
+        }
+        for (const team of match.teams) {
+          forbiddenPartners[team[0]].add(team[1]);
+          forbiddenPartners[team[1]].add(team[0]);
+        }
+      }
+    }
+    return forbiddenPartners;
+  };
+  var roundIsOpen = (round) => round.some((match) => match.winningTeam === null);
   var resetNextRound = (history, participants, roundCount) => {
     if (typeof history === "undefined") {
       history = load("history");

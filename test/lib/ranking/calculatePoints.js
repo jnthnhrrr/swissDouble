@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { calculatePoints } from '../../dist/lib.js'
+import { calculatePoints } from '../../../dist/ranking.js'
 
 describe('calculatePoints', () => {
   describe('when history is empty', () => {

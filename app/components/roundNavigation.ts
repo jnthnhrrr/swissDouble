@@ -1,7 +1,7 @@
-import { createRoundView } from './roundView.js'
+import { createRoundView } from './roundView'
 
-import { htmlElement } from '../dom.js'
-import { calculateCurrentRound } from '../lib.js'
+import { htmlElement } from '../dom'
+import { calculateCurrentRound } from '../tournament'
 
 export const highlightRoundNavItem = (roundNumber: number) => {
   let items = document.getElementsByClassName('nav-round')

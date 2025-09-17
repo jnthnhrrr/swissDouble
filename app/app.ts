@@ -3,11 +3,8 @@ import { load, dump, erase, StorageKey, STORAGE_KEYS } from './storage.js'
 import { isTruthy, findDuplicates } from './utils.js'
 import { writeToInputField } from './dom.js'
 
-import {
-  tournamentHasStarted,
-  calculateCurrentRound,
-  setNextRound,
-} from './lib'
+import { setNextRound } from './round'
+import { tournamentHasStarted, calculateCurrentRound } from './tournament'
 
 import { createAlert } from './components/alert'
 import {

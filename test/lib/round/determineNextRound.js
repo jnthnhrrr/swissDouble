@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { JSDOM } from 'jsdom'
-import { determineNextRound } from '../../dist/lib.js'
-import { dump } from '../../dist/storage.js'
+import { determineNextRound } from '../../../dist/round.js'
+import { dump } from '../../../dist/storage.js'
 
 describe('determineNextRound integration test', () => {
   before(() => {

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { calculatePoints, calculateRanking, calculateBuchholz } from '../../dist/lib.js'
+import { calculatePoints, calculateRanking, calculateBuchholz } from '../../../dist/ranking.js'
 
 describe('Ranking', function () {
   describe('calculatePoints', function () {
