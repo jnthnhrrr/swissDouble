@@ -1,3 +1,6 @@
+#data-form {
+  --line-height: 1.2;
+}
 #data-form .input {
   width: 100%;
   font-size: var(--font-size);
@@ -12,4 +15,38 @@
 
 #data-form #input-participants {
   width: 100%;
+}
+
+.textarea-with-numbers {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.4;
+  background: white;
+}
+
+.line-numbers {
+  font-size: var(--font-size);
+  background-color: var(--color-subtle);
+  color: var(--color-light);
+  margin: 0;
+  padding: 0 8px 0 0;
+  text-align: right;
+  user-select: none;
+  border-right: 1px solid #dee2e6;
+  min-width: 35px;
+  overflow: hidden;
+  white-space: pre-line;
+  line-height: var(--line-height);
+}
+
+#input-participants {
+  border: none !important;
+  outline: none;
+  resize: none;
+  flex: 1;
+  font-size: var(--font-size) !important;
+  line-height: var(--line-height);
 }

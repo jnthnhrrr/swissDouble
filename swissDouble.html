@@ -365,6 +365,9 @@ h2 {
   /* This is for the positioning of the dropdown */
   position: absolute;
 }
+#data-form {
+  --line-height: 1.2;
+}
 #data-form .input {
   width: 100%;
   font-size: var(--font-size);
@@ -379,6 +382,40 @@ h2 {
 
 #data-form #input-participants {
   width: 100%;
+}
+
+.textarea-with-numbers {
+  display: flex;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.4;
+  background: white;
+}
+
+.line-numbers {
+  font-size: var(--font-size);
+  background-color: var(--color-subtle);
+  color: var(--color-light);
+  margin: 0;
+  padding: 0 8px 0 0;
+  text-align: right;
+  user-select: none;
+  border-right: 1px solid #dee2e6;
+  min-width: 35px;
+  overflow: hidden;
+  white-space: pre-line;
+  line-height: var(--line-height);
+}
+
+#input-participants {
+  border: none !important;
+  outline: none;
+  resize: none;
+  flex: 1;
+  font-size: var(--font-size) !important;
+  line-height: var(--line-height);
 }
 .alert {
   z-index: 2;
@@ -845,17 +882,20 @@ h2 {
       </div>
 
       <div class="label">Setzung</div>
-      <textarea id="input-participants" rows=8 type="text" class="input"></textarea>
+      <div class="textarea-with-numbers">
+        <div class="line-numbers" id="participants-line-numbers">1</div>
+        <textarea id="input-participants" rows="8" type="text" class="input"></textarea>
+      </div>
 
       <div class="flex">
         <button class="btn btn-action right" id="action-start-tournament">
           Turnier Starten
         </button>
       </div>
-    </div>
-  `
+    </div>`
     );
     document.getElementById("tournament-data").replaceChildren(dataForm);
+    setupLineNumbers();
     document.getElementById("action-start-tournament").addEventListener("click", startTournament);
     document.getElementById("input-participants").addEventListener("keyup", (event) => {
       if (event.key == "Enter") {
@@ -863,13 +903,42 @@ h2 {
       }
     });
   };
+  var updateLineNumbers = () => {
+    const textarea = document.getElementById(
+      "input-participants"
+    );
+    const lineNumbers = document.getElementById("participants-line-numbers");
+    const lines = textarea.value.split("\n");
+    console.log(lines, lines.length);
+    const numbers = [];
+    for (let i = 1; i <= lines.length; i++) {
+      numbers.push(i.toString());
+    }
+    console.log(numbers);
+    lineNumbers.textContent = numbers.join("\n");
+  };
+  var setupLineNumbers = () => {
+    const textarea = document.getElementById(
+      "input-participants"
+    );
+    const lineNumbers = document.getElementById("participants-line-numbers");
+    const syncScroll = () => {
+      lineNumbers.scrollTop = textarea.scrollTop;
+    };
+    textarea.addEventListener("input", updateLineNumbers);
+    textarea.addEventListener("scroll", syncScroll);
+    textarea.addEventListener("paste", () => {
+      setTimeout(updateLineNumbers, 10);
+    });
+    updateLineNumbers();
+  };
   var onParticipantInputChange = () => {
     const input = document.getElementById(
       "input-participants"
     );
     let participants = readParticipants();
+    updateLineNumbers();
     dump("participants", participants);
-    input.rows = Math.max(input.rows, participants.length + 2);
   };
   var readParticipants = () => readFromInputField("input-participants").split("\n").filter((line) => line.trim());
   var readTitle = () => readFromInputField("input-title");
