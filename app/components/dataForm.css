@@ -32,7 +32,7 @@
   background-color: var(--color-subtle);
   color: var(--color-light);
   margin: 0;
-  padding: 0 8px 0 0;
+  padding: 1px 8px 0 0;
   text-align: right;
   user-select: none;
   border-right: 1px solid #dee2e6;

@@ -71,15 +71,15 @@ export const createHeader = () => {
     .addEventListener('click', createTournament)
 
   document
-    .getElementById('open-tournament-section')!
+    .getElementById('action-open-tournament')!
     .addEventListener('click', createOpenDialog)
 
   document
-    .getElementById('export-tournament-section')!
+    .getElementById('action-export-tournament')!
     .addEventListener('click', exportTournament)
 
   document
-    .getElementById('import-tournament-section')!
+    .getElementById('action-import-tournament')!
     .addEventListener('click', openImportFileDialogue)
 
   document

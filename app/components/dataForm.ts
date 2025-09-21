@@ -61,13 +61,11 @@ const updateLineNumbers = () => {
   ) as HTMLTextAreaElement
   const lineNumbers = document.getElementById('participants-line-numbers')!
   const lines = textarea.value.split('\n')
-  console.log(lines, lines.length)
 
   const numbers = []
   for (let i = 1; i <= lines.length; i++) {
     numbers.push(i.toString())
   }
-  console.log(numbers)
 
   lineNumbers.textContent = numbers.join('\n')
 }

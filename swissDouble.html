@@ -103,7 +103,7 @@ h2 {
 }
 
 .border {
-  border: 4px double black;
+  border: 2px solid black;
   border-radius: var(--border-radius);
 }
 
@@ -340,7 +340,6 @@ h2 {
   }
 }
 #header {
-  width: 100%;
   overflow: hidden;
   display: flex;
   gap: 12px;
@@ -399,7 +398,7 @@ h2 {
   background-color: var(--color-subtle);
   color: var(--color-light);
   margin: 0;
-  padding: 0 8px 0 0;
+  padding: 1px 8px 0 0;
   text-align: right;
   user-select: none;
   border-right: 1px solid #dee2e6;
@@ -909,12 +908,10 @@ h2 {
     );
     const lineNumbers = document.getElementById("participants-line-numbers");
     const lines = textarea.value.split("\n");
-    console.log(lines, lines.length);
     const numbers = [];
     for (let i = 1; i <= lines.length; i++) {
       numbers.push(i.toString());
     }
-    console.log(numbers);
     lineNumbers.textContent = numbers.join("\n");
   };
   var setupLineNumbers = () => {
@@ -1046,9 +1043,9 @@ h2 {
     );
     document.getElementById("header").replaceWith(dom);
     document.getElementById("action-create-tournament").addEventListener("click", createTournament);
-    document.getElementById("open-tournament-section").addEventListener("click", createOpenDialog);
-    document.getElementById("export-tournament-section").addEventListener("click", exportTournament);
-    document.getElementById("import-tournament-section").addEventListener("click", openImportFileDialogue);
+    document.getElementById("action-open-tournament").addEventListener("click", createOpenDialog);
+    document.getElementById("action-export-tournament").addEventListener("click", exportTournament);
+    document.getElementById("action-import-tournament").addEventListener("click", openImportFileDialogue);
     document.getElementById("import-tournament-file-input").addEventListener("change", importTournament);
   };
 
@@ -1527,6 +1524,7 @@ h2 {
     const history = load("history", []);
     const roundCount = load("roundCount");
     const title = load("title");
+    document.title = title;
     createHeader();
     if (tournamentHasStarted(history)) {
       const participants2 = load("participants") || [];

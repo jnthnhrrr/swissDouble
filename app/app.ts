@@ -32,6 +32,7 @@ export const render = () => {
   const history = load('history', [])
   const roundCount = load('roundCount')
   const title = load('title')
+  document.title = title
 
   createHeader()
 

@@ -98,7 +98,7 @@ h2 {
 }
 
 .border {
-  border: 4px double black;
+  border: 2px solid black;
   border-radius: var(--border-radius);
 }
 
