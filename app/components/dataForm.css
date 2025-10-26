@@ -1,15 +1,19 @@
 #data-form {
   --line-height: 1.2;
 }
+
 #data-form .input {
   width: 100%;
-  font-size: var(--font-size);
+  font-size: var(--font-size) !important;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 #data-form .label {
   margin-top: 12px;
   margin-bottom: 4px;
-  font-size: var(--font-size);
+  font-size: var(--font-size) !important;
+  line-height: var(--line-height) !important;
   font-weight: bold;
 }
 
@@ -22,24 +26,24 @@
   border: 1px solid #ccc;
   border-radius: 4px;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 1.4;
   background: white;
 }
 
 .line-numbers {
-  font-size: var(--font-size);
+  font-family: inherit;
+  font-size: var(--font-size) !important;
+  line-height: var(--line-height) !important;
   background-color: var(--color-subtle);
   color: var(--color-light);
   margin: 0;
-  padding: 1px 8px 0 0;
+  padding: 2px 8px 2px 4px;
   text-align: right;
   user-select: none;
   border-right: 1px solid #dee2e6;
   min-width: 35px;
   overflow: hidden;
-  white-space: pre-line;
-  line-height: var(--line-height);
+  white-space: pre;
+  box-sizing: border-box;
 }
 
 #input-participants {
@@ -47,6 +51,12 @@
   outline: none;
   resize: none;
   flex: 1;
+  font-family: inherit;
   font-size: var(--font-size) !important;
-  line-height: var(--line-height);
+  line-height: var(--line-height) !important;
+  padding: 2px;
+  margin: 0;
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
