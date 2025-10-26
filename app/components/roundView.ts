@@ -233,9 +233,9 @@ const closeRound = (roundNumber: number) => {
   dump('history', history)
   if (correctingThisRound) {
     erase('correctingRound')
-    resetNextRound(history, participants, roundCount)
+    resetNextRound()
   }
-  setNextRound(history, participants, roundCount)
+  setNextRound(history, roundCount)
   render()
 }
 

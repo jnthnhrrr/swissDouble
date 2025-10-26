@@ -14,7 +14,6 @@ export const createManagePlayersDialog = () => {
   const departedPlayers = load('departedPlayers') || {}
   const currentRound = calculateCurrentRound()
 
-  // Get active players (not yet departed)
   const activePlayers = participants.filter(
     (player: Player) => !departedPlayers[player]
   )
@@ -109,5 +108,5 @@ const removePlayer = (player: Player, afterRound: number) => {
   dump('departedPlayers', departedPlayers)
   destroyManagePlayersDialog()
   resetNextRound()
-  render() // Re-render to show updated rankings
+  render()
 }

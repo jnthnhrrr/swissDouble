@@ -13,12 +13,10 @@ import { getActiveParticipants, calculateCurrentRound } from './tournament.js'
 import { setDiff, popRandom, drawRandom } from './utils.js'
 import { dump, load } from './storage.js'
 
-export const determineNextRound = (
-  participants: Player[],
-  history: History
-): Round => {
-  let [teams, freeGamers] = determineTeams(participants, history)
-  let ranking = calculateRanking(participants, history)
+export const determineNextRound = (history: History): Round => {
+  const activeParticipants = getActiveParticipants()
+  let [teams, freeGamers] = determineTeams(activeParticipants, history)
+  let ranking = calculateRanking(activeParticipants, history)
   return [
     ...calculatePowerPairing(teams, ranking),
     ...freeGameMatches(freeGamers),
@@ -40,17 +38,13 @@ export const determineTeams = (
   participants: Player[],
   history: History
 ): [Team[], Player[]] => {
-  const activeParticipants = getActiveParticipants()
-  const forbiddenPairings = calculateForbiddenPartners(
-    activeParticipants,
-    history
-  )
-  const freeGamers = calculateFreeGamers(activeParticipants, history)
+  const forbiddenPairings = calculateForbiddenPartners(participants, history)
+  const freeGamers = calculateFreeGamers(participants, history)
   if (history.length == 0) {
     return [determineTeamsForFirstRound(participants, freeGamers), freeGamers]
   }
   return [
-    drawTeams(activeParticipants, forbiddenPairings, [...freeGamers]),
+    drawTeams(participants, forbiddenPairings, [...freeGamers]),
     [...freeGamers],
   ]
 }
@@ -123,8 +117,10 @@ export const calculateForbiddenPartners = (
   participants: Player[],
   history: History
 ) => {
+  // Use all participants including departed players for forbidden partners calculation
+  const allParticipants = load('participants') as Player[]
   let forbiddenPartners: Record<Player, Set<Player>> = {}
-  for (const participant of participants) {
+  for (const participant of allParticipants) {
     forbiddenPartners[participant] = new Set([participant])
   }
   for (const round of history) {
@@ -144,34 +140,16 @@ export const calculateForbiddenPartners = (
 export const roundIsOpen = (round: Round) =>
   round.some((match) => match.winningTeam === null)
 
-export const resetNextRound = (
-  history?: History,
-  participants?: Player[],
-  roundCount?: number
-) => {
-  if (typeof history === 'undefined') {
-    history = load('history') as History
-  }
-  if (typeof participants === 'undefined') {
-    participants = load('participants') as Player[]
-  }
-  if (typeof roundCount === 'undefined') {
-    roundCount = load('roundCount') as number
-  }
+export const resetNextRound = () => {
+  const history = load('history') as History
+  const roundCount = load('roundCount') as number
   history.pop()
   dump('history', history)
-  setNextRound(history, participants, roundCount)
+  setNextRound(history, roundCount)
 }
 
-export const setNextRound = (
-  history: History,
-  participants: Player[],
-  roundCount: number
-) => {
+export const setNextRound = (history: History, roundCount: number) => {
   if (calculateCurrentRound() == roundCount) return
-  const newHistory: History = [
-    ...history,
-    determineNextRound(participants, history),
-  ]
+  const newHistory: History = [...history, determineNextRound(history)]
   dump('history', newHistory)
 }

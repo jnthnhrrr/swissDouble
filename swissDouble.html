@@ -687,9 +687,10 @@ h2 {
   };
 
   // app/round.ts
-  var determineNextRound = (participants, history) => {
-    let [teams, freeGamers] = determineTeams(participants, history);
-    let ranking = calculateRanking(participants, history);
+  var determineNextRound = (history) => {
+    const activeParticipants = getActiveParticipants();
+    let [teams, freeGamers] = determineTeams(activeParticipants, history);
+    let ranking = calculateRanking(activeParticipants, history);
     return [
       ...calculatePowerPairing(teams, ranking),
       ...freeGameMatches(freeGamers)
@@ -706,17 +707,13 @@ h2 {
     return matches;
   };
   var determineTeams = (participants, history) => {
-    const activeParticipants = getActiveParticipants();
-    const forbiddenPairings = calculateForbiddenPartners(
-      activeParticipants,
-      history
-    );
-    const freeGamers = calculateFreeGamers(activeParticipants, history);
+    const forbiddenPairings = calculateForbiddenPartners(participants, history);
+    const freeGamers = calculateFreeGamers(participants, history);
     if (history.length == 0) {
       return [determineTeamsForFirstRound(participants, freeGamers), freeGamers];
     }
     return [
-      drawTeams(activeParticipants, forbiddenPairings, [...freeGamers]),
+      drawTeams(participants, forbiddenPairings, [...freeGamers]),
       [...freeGamers]
     ];
   };
@@ -763,8 +760,9 @@ h2 {
     return matches;
   };
   var calculateForbiddenPartners = (participants, history) => {
+    const allParticipants = load("participants");
     let forbiddenPartners = {};
-    for (const participant of participants) {
+    for (const participant of allParticipants) {
       forbiddenPartners[participant] = /* @__PURE__ */ new Set([participant]);
     }
     for (const round of history) {
@@ -781,26 +779,16 @@ h2 {
     return forbiddenPartners;
   };
   var roundIsOpen = (round) => round.some((match) => match.winningTeam === null);
-  var resetNextRound = (history, participants, roundCount) => {
-    if (typeof history === "undefined") {
-      history = load("history");
-    }
-    if (typeof participants === "undefined") {
-      participants = load("participants");
-    }
-    if (typeof roundCount === "undefined") {
-      roundCount = load("roundCount");
-    }
+  var resetNextRound = () => {
+    const history = load("history");
+    const roundCount = load("roundCount");
     history.pop();
     dump("history", history);
-    setNextRound(history, participants, roundCount);
+    setNextRound(history, roundCount);
   };
-  var setNextRound = (history, participants, roundCount) => {
+  var setNextRound = (history, roundCount) => {
     if (calculateCurrentRound() == roundCount) return;
-    const newHistory = [
-      ...history,
-      determineNextRound(participants, history)
-    ];
+    const newHistory = [...history, determineNextRound(history)];
     dump("history", newHistory);
   };
 
@@ -1330,9 +1318,9 @@ h2 {
     dump("history", history);
     if (correctingThisRound) {
       erase("correctingRound");
-      resetNextRound(history, participants, roundCount);
+      resetNextRound();
     }
-    setNextRound(history, participants, roundCount);
+    setNextRound(history, roundCount);
     render();
   };
   var attemptReopenRound = (roundNumber) => {
@@ -1581,7 +1569,7 @@ h2 {
     dump("roundCount", roundCount);
     dump("title", readTitle());
     dump("history", history);
-    setNextRound(history, participants, roundCount);
+    setNextRound(history, roundCount);
     render();
   };
   var createTournament = () => {

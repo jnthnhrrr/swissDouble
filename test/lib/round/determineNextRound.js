@@ -28,11 +28,11 @@ describe('determineNextRound integration test', () => {
         'player8',
       ]
       dump('participants', participants)
-      dump('departedplayers', {})
+      dump('departedPlayers', {})
       const emptyHistory = []
 
       // phase 1: determine first round
-      const firstRoundMatches = determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(emptyHistory)
 
       // 8 players = 2 matches (4 players each), no free games
       expect(firstRoundMatches).to.have.length(2)
@@ -60,7 +60,7 @@ describe('determineNextRound integration test', () => {
 
       const historyAfterFirstRound = [completedFirstRound]
 
-      const secondRoundMatches = determineNextRound(participants, historyAfterFirstRound)
+      const secondRoundMatches = determineNextRound(historyAfterFirstRound)
 
       expect(secondRoundMatches).to.have.length(2)
 
@@ -98,7 +98,7 @@ describe('determineNextRound integration test', () => {
       dump('departedPlayers', {})
 
       // PHASE 1: Determine first round
-      const firstRoundMatches = determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(emptyHistory)
 
       // 5 players: 4 play (1 match), 1 gets free game
       const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
@@ -125,7 +125,7 @@ describe('determineNextRound integration test', () => {
         return { ...match, winningTeam: 0 }
       })
 
-      const secondRoundMatches = determineNextRound(participants, [completedFirstRound])
+      const secondRoundMatches = determineNextRound([completedFirstRound])
 
       const secondRegularMatches = secondRoundMatches.filter((match) => !match.isFreeGame)
       const secondFreeGameMatches = secondRoundMatches.filter((match) => match.isFreeGame)
@@ -146,7 +146,7 @@ describe('determineNextRound integration test', () => {
       dump('departedPlayers', {})
 
       // PHASE 1: Determine first round
-      const firstRoundMatches = determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(emptyHistory)
 
       // 6 players: 4 play (1 match), 2 get free games
       const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
@@ -180,7 +180,7 @@ describe('determineNextRound integration test', () => {
       dump('departedPlayers', {})
 
       // PHASE 1: Determine first round
-      const firstRoundMatches = determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(emptyHistory)
 
       // 7 players: 4 play (1 match), 3 get free games
       const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
@@ -202,7 +202,7 @@ describe('determineNextRound integration test', () => {
       participants.forEach((p) => (freeGameHistory[p] = 0))
 
       for (let round = 1; round <= 3; round++) {
-        const roundMatches = determineNextRound(participants, history)
+        const roundMatches = determineNextRound(history)
 
         // Count free games
         const freeGameMatches = roundMatches.filter((match) => match.isFreeGame)
@@ -243,7 +243,7 @@ describe('determineNextRound integration test', () => {
       dump('participants', participants)
       dump('departedPlayers', {})
 
-      const firstRoundMatches = determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(emptyHistory)
 
       expect(firstRoundMatches).to.have.length(1) // 4 players = 1 match, no free games
       expect(firstRoundMatches.every((match) => !match.isFreeGame)).to.be.true
@@ -261,7 +261,7 @@ describe('determineNextRound integration test', () => {
       dump('participants', participants)
       dump('departedPlayers', {})
 
-      const firstRoundMatches = determineNextRound(participants, emptyHistory)
+      const firstRoundMatches = determineNextRound(emptyHistory)
 
       expect(firstRoundMatches).to.have.length(3) // 12 players = 3 matches, no free games
       expect(firstRoundMatches.every((match) => !match.isFreeGame)).to.be.true
@@ -290,7 +290,7 @@ describe('determineNextRound integration test', () => {
 
       // Run multiple times to test the randomness while verifying the pairing rule
       for (let trial = 0; trial < 10; trial++) {
-        const firstRoundMatches = determineNextRound(participants, emptyHistory) // Should be 2 matches, no free games
+        const firstRoundMatches = determineNextRound(emptyHistory) // Should be 2 matches, no free games
         expect(firstRoundMatches).to.have.length(2)
         expect(firstRoundMatches.every((match) => !match.isFreeGame)).to.be.true
 
@@ -355,7 +355,7 @@ describe('determineNextRound integration test', () => {
       dump('departedPlayers', {})
 
       for (let trial = 0; trial < 10; trial++) {
-        const firstRoundMatches = determineNextRound(participants, emptyHistory)
+        const firstRoundMatches = determineNextRound(emptyHistory)
 
         const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
         const freeGameMatches = firstRoundMatches.filter((match) => match.isFreeGame)
@@ -387,6 +387,150 @@ describe('determineNextRound integration test', () => {
               `Effective top: ${topHalf.join(',')}, Effective bottom: ${bottomHalf.join(',')}`
         })
       }
+    })
+  })
+
+  describe('departed players', () => {
+    it('excludes departed players from first round teams', () => {
+      const participants = [
+        'Player1',
+        'Player2',
+        'Player3',
+        'Player4',
+        'Player5',
+        'Player6',
+        'Player7',
+        'Player8',
+      ]
+      const emptyHistory = []
+
+      dump('participants', participants)
+      // Player7 and Player8 departed before tournament started (round 0)
+      dump('departedPlayers', { Player7: 0, Player8: 0 })
+
+      const firstRoundMatches = determineNextRound(emptyHistory)
+
+      // 6 active players = 1 match (4 players) + 2 free games
+      const regularMatches = firstRoundMatches.filter((match) => !match.isFreeGame)
+      const freeGameMatches = firstRoundMatches.filter((match) => match.isFreeGame)
+
+      expect(regularMatches).to.have.length(1)
+      expect(freeGameMatches).to.have.length(2)
+
+      const playingPlayers = regularMatches.flatMap((match) => match.teams.flatMap((team) => team))
+      const freeGamePlayers = freeGameMatches.map((match) => match.player)
+      const allPlayersInRound = [...playingPlayers, ...freeGamePlayers]
+
+      // Verify departed players are NOT in the round
+      expect(allPlayersInRound).to.not.include('Player7')
+      expect(allPlayersInRound).to.not.include('Player8')
+
+      // Verify all active players ARE in the round
+      const activeParticipants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5', 'Player6']
+      expect(allPlayersInRound).to.have.members(activeParticipants)
+      expect(allPlayersInRound).to.have.length(6)
+    })
+
+    it('excludes departed players from subsequent rounds and uses correct ranking', () => {
+      const participants = [
+        'Player1',
+        'Player2',
+        'Player3',
+        'Player4',
+        'Player5',
+        'Player6',
+        'Player7',
+        'Player8',
+      ]
+
+      dump('participants', participants)
+      dump('departedPlayers', {})
+
+      // Play first round (all 8 players active)
+      const firstRoundMatches = determineNextRound([])
+      expect(firstRoundMatches).to.have.length(2) // 8 players = 2 matches
+
+      // Complete first round
+      const completedFirstRound = firstRoundMatches.map((match) => ({
+        ...match,
+        winningTeam: 0, // Team 0 wins each match
+      }))
+
+      // Player7 and Player8 depart after first round
+      dump('departedPlayers', { Player7: 1, Player8: 1 })
+
+      // Determine second round
+      const secondRoundMatches = determineNextRound([completedFirstRound])
+
+      // 6 active players = 1 match (4 players) + 2 free games
+      const regularMatches = secondRoundMatches.filter((match) => !match.isFreeGame)
+      const freeGameMatches = secondRoundMatches.filter((match) => match.isFreeGame)
+
+      expect(regularMatches).to.have.length(1)
+      expect(freeGameMatches).to.have.length(2)
+
+      // Extract all players in second round
+      const playingPlayers = regularMatches.flatMap((match) => match.teams.flatMap((team) => team))
+      const freeGamePlayers = freeGameMatches.map((match) => match.player)
+      const allPlayersInSecondRound = [...playingPlayers, ...freeGamePlayers]
+
+      // Verify departed players are NOT in the second round
+      expect(allPlayersInSecondRound).to.not.include('Player7')
+      expect(allPlayersInSecondRound).to.not.include('Player8')
+
+      // Verify only active players are in the second round
+      const activeParticipants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5', 'Player6']
+      expect(allPlayersInSecondRound).to.have.members(activeParticipants)
+      expect(allPlayersInSecondRound).to.have.length(6)
+    })
+
+    it('handles all but 4 players departing', () => {
+      const participants = [
+        'Player1',
+        'Player2',
+        'Player3',
+        'Player4',
+        'Player5',
+        'Player6',
+        'Player7',
+        'Player8',
+      ]
+
+      dump('participants', participants)
+      dump('departedPlayers', {})
+
+      // Play first round
+      const firstRoundMatches = determineNextRound([])
+      const completedFirstRound = firstRoundMatches.map((match) => ({
+        ...match,
+        winningTeam: 0,
+      }))
+
+      // Players 5-8 depart
+      dump('departedPlayers', {
+        Player5: 1,
+        Player6: 1,
+        Player7: 1,
+        Player8: 1,
+      })
+
+      // Determine second round with only 4 active players
+      const secondRoundMatches = determineNextRound([completedFirstRound])
+
+      // 4 active players = 1 match, no free games
+      expect(secondRoundMatches).to.have.length(1)
+      expect(secondRoundMatches[0]).to.not.have.property('isFreeGame')
+      expect(secondRoundMatches[0].teams).to.have.length(2)
+
+      const allPlayersInRound = secondRoundMatches.flatMap((match) =>
+        match.teams.flatMap((team) => team)
+      )
+
+      expect(allPlayersInRound).to.have.members(['Player1', 'Player2', 'Player3', 'Player4'])
+      expect(allPlayersInRound).to.not.include('Player5')
+      expect(allPlayersInRound).to.not.include('Player6')
+      expect(allPlayersInRound).to.not.include('Player7')
+      expect(allPlayersInRound).to.not.include('Player8')
     })
   })
 })

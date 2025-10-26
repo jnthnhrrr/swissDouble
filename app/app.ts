@@ -81,7 +81,7 @@ export const startTournament = () => {
   dump('title', readTitle())
   dump('history', history)
 
-  setNextRound(history, participants, roundCount)
+  setNextRound(history, roundCount)
   render()
 }
 
