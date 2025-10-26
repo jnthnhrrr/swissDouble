@@ -65,6 +65,10 @@
   padding: 12px;
 }
 
+.fw-normal {
+  font-weight: normal;
+}
+
 .btn-action {
   margin-top: 12px;
   background: var(--color-action);

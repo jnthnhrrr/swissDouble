@@ -5,22 +5,25 @@ import {
   createReopenRoundConfirmation,
 } from './reopenRoundConfirmation'
 
-import type { FreeGameMatch, RegularMatch } from '../types'
+import type { FreeGameMatch, RegularMatch, Player, Points } from '../types'
 import { resetNextRound, setNextRound } from '../round'
 import { calculateCurrentRound, tournamentHasFinished } from '../tournament'
 import { load, dump, erase } from '../storage'
 import { isTruthy } from '../utils'
 import { htmlElement } from '../dom'
+import { calculatePoints } from '../ranking'
 
 import { render } from '../app'
 
-const freeGameDom = (match: FreeGameMatch) =>
+const freeGameDom = (match: FreeGameMatch, points: Record<Player, Points>) =>
   htmlElement(
     'div',
     `
     <div class="match freegame flex">
-      <div class="team">FREISPIEL</div>
-      <div class="team">${match.player}</div>
+      <div class="team"><div class="fw-normal">FREISPIEL</div></div>
+      <div class="team"><div class="player">${
+        match.player
+      } <span class="points">[${points[match.player]}]</span></div>
     </div>
   `
   )
@@ -69,13 +72,21 @@ const setWinner = (thisDom: HTMLElement, thatDom: HTMLElement) => {
   thatDom.classList.add('set')
 }
 
-const regularMatchDom = (match: RegularMatch, editable: boolean) => {
+const regularMatchDom = (
+  match: RegularMatch,
+  editable: boolean,
+  points: Record<Player, Points>
+) => {
   const teamOne = htmlElement(
     'div',
     `
     <div class="team">
-      <div class="player">${match.teams[0][0]}</div>
-      <div class="player">${match.teams[0][1]}</div>
+      <div class="player">${match.teams[0][0]} <span class="points">[${
+        points[match.teams[0][0]]
+      }]</span></div>
+      <div class="player">${match.teams[0][1]} <span class="points">[${
+        points[match.teams[0][1]]
+      }]</span></div>
     </div>
   `
   )
@@ -83,8 +94,12 @@ const regularMatchDom = (match: RegularMatch, editable: boolean) => {
     'div',
     `
     <div class="team">
-      <div class="player">${match.teams[1][0]}</div>
-      <div class="player">${match.teams[1][1]}</div>
+      <div class="player">${match.teams[1][0]} <span class="points">[${
+        points[match.teams[1][0]]
+      }]</span></div>
+      <div class="player">${match.teams[1][1]} <span class="points">[${
+        points[match.teams[1][1]]
+      }]</span></div>
     </div>
   `
   )
@@ -105,10 +120,14 @@ export const createRoundView = (focusedRound: number) => {
 
   if (!isTruthy(history)) return
 
+  const participants = load('participants')
   const roundCount = load('roundCount')
   const currentRound = calculateCurrentRound()
   const tournamentIsOver = tournamentHasFinished(history, roundCount)
   const tournamentIsNotOverYet = !tournamentIsOver
+
+  const historyBeforeFocusedRound = history.slice(0, focusedRound - 1)
+  const points = calculatePoints(participants, historyBeforeFocusedRound)
 
   const dom = htmlElement(
     'div',
@@ -135,8 +154,8 @@ export const createRoundView = (focusedRound: number) => {
   let matchDoms: HTMLDivElement[] = []
   for (const match of round) {
     'isFreeGame' in match
-      ? matchDoms.push(freeGameDom(match))
-      : matchDoms.push(regularMatchDom(match, roundIsEditable))
+      ? matchDoms.push(freeGameDom(match, points))
+      : matchDoms.push(regularMatchDom(match, roundIsEditable, points))
   }
   dom.replaceChildren(heading, ...matchDoms)
 

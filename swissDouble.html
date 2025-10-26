@@ -70,6 +70,10 @@
   padding: 12px;
 }
 
+.fw-normal {
+  font-weight: normal;
+}
+
 .btn-action {
   margin-top: 12px;
   background: var(--color-action);
@@ -126,6 +130,11 @@ h2 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
+}
+
+.points {
+  font-weight: normal;
 }
 
 #round-view .match .result {
@@ -1144,12 +1153,12 @@ h2 {
   };
 
   // app/components/roundView.ts
-  var freeGameDom = (match) => htmlElement(
+  var freeGameDom = (match, points) => htmlElement(
     "div",
     `
     <div class="match freegame flex">
-      <div class="team">FREISPIEL</div>
-      <div class="team">${match.player}</div>
+      <div class="team"><div class="fw-normal">FREISPIEL</div></div>
+      <div class="team"><div class="player">${match.player} <span class="points">[${points[match.player]}]</span></div>
     </div>
   `
   );
@@ -1186,13 +1195,13 @@ h2 {
     thisDom.classList.add("set");
     thatDom.classList.add("set");
   };
-  var regularMatchDom = (match, editable) => {
+  var regularMatchDom = (match, editable, points) => {
     const teamOne = htmlElement(
       "div",
       `
     <div class="team">
-      <div class="player">${match.teams[0][0]}</div>
-      <div class="player">${match.teams[0][1]}</div>
+      <div class="player">${match.teams[0][0]} <span class="points">[${points[match.teams[0][0]]}]</span></div>
+      <div class="player">${match.teams[0][1]} <span class="points">[${points[match.teams[0][1]]}]</span></div>
     </div>
   `
     );
@@ -1200,8 +1209,8 @@ h2 {
       "div",
       `
     <div class="team">
-      <div class="player">${match.teams[1][0]}</div>
-      <div class="player">${match.teams[1][1]}</div>
+      <div class="player">${match.teams[1][0]} <span class="points">[${points[match.teams[1][0]]}]</span></div>
+      <div class="player">${match.teams[1][1]} <span class="points">[${points[match.teams[1][1]]}]</span></div>
     </div>
   `
     );
@@ -1216,10 +1225,13 @@ h2 {
     destroyRoundView();
     const history = load("history");
     if (!isTruthy(history)) return;
+    const participants = load("participants");
     const roundCount = load("roundCount");
     const currentRound = calculateCurrentRound();
     const tournamentIsOver = tournamentHasFinished(history, roundCount);
     const tournamentIsNotOverYet = !tournamentIsOver;
+    const historyBeforeFocusedRound = history.slice(0, focusedRound - 1);
+    const points = calculatePoints(participants, historyBeforeFocusedRound);
     const dom = htmlElement(
       "div",
       `<div id="round-view" class="page border"></div>`
@@ -1238,7 +1250,7 @@ h2 {
     );
     let matchDoms = [];
     for (const match of round) {
-      "isFreeGame" in match ? matchDoms.push(freeGameDom(match)) : matchDoms.push(regularMatchDom(match, roundIsEditable));
+      "isFreeGame" in match ? matchDoms.push(freeGameDom(match, points)) : matchDoms.push(regularMatchDom(match, roundIsEditable, points));
     }
     dom.replaceChildren(heading, ...matchDoms);
     if (roundIsEditable) {
