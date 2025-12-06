@@ -38,3 +38,14 @@
    ranking according to Buchholz.
 2. We calculate the Buchholz ranking of a player as the sum of the points of
    their opponents minus the sum of the points of their partners.
+
+# Edge Cases and Limitations
+
+1. **Number of rounds exceeding number of players**: If the number of rounds in
+   a tournament exceeds the number of players, the program will fail to find
+   eligible players for team pairing. This occurs because each player can only
+   be partnered with each other player once, and with enough rounds, all
+   possible pairings will eventually be exhausted. Because this violates the
+   rule that each player should not be paired with any other player more than
+   once, this edge case is not handled in the code. The program will fail if
+   this situation occurs.

@@ -7,7 +7,6 @@
 
 3. Keine zwei Spieler:innen werden in einem Turnier mehr als einmal als Team
    zusammengestellt.
-
 4. Die Paarzuteilung ist unabhängig von den Punkten oder der Buchholz-Wertung
    der Spieler:innen, mit einer Ausnahme:
 
@@ -45,3 +44,13 @@
 
 2. Wir berechnen die Buchholz-Wertung ein:er Spieler:in als die Summe der Punkte
    ihrer Gegner:innen minus die Summe der Punkte ihrer Partner:innen.
+
+# Edge-Cases
+
+1. **Anzahl der Runden übersteigt Anzahl der Spieler:innen**: Wenn die Anzahl
+   der Runden in einem Turnier die Anzahl der Spieler:innen übersteigt, kann
+   keine erlaubte Teamzusammenstellung gefunden werden, da jede:r Spieler:in nur
+   einmal mit jeder:m anderen Spieler:in als Team zusammengestellt werden kann,
+   und bei genügend Runden schließlich alle erlaubten Paarungen ausgeschöpft
+   sind. Das Programm wird in diesem Fall scheitern, und die Auslosung der
+   weiteren Runden an dieser Stelle blockieren.
