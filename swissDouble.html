@@ -652,6 +652,20 @@ h2 {
   };
 
   // app/freeGamers.ts
+  var getFreeGameCount = (player, history) => {
+    let count = 0;
+    for (const round of history) {
+      for (const match of round) {
+        if (!("isFreeGame" in match)) {
+          continue;
+        }
+        if (match.player == player) {
+          count++;
+        }
+      }
+    }
+    return count;
+  };
   var calculateFreeGamers = (participants, history) => {
     let ranking = calculateRanking(participants, history);
     const participantCount = participants.length;
@@ -660,8 +674,13 @@ h2 {
     if (freeGamesCount == 0) {
       return freeGamers;
     }
+    const freeGameCounts = {};
+    for (const participant of participants) {
+      freeGameCounts[participant] = getFreeGameCount(participant, history);
+    }
+    const minFreeGames = Math.min(...Object.values(freeGameCounts));
     for (const [player, _] of ranking.reverse()) {
-      if (!playerHadFreeGame(player, history)) {
+      if (freeGameCounts[player] === minFreeGames) {
         freeGamers.push(player);
       }
       if (freeGamers.length == freeGamesCount) {
@@ -669,19 +688,6 @@ h2 {
       }
     }
     return freeGamers;
-  };
-  var playerHadFreeGame = (player, history) => {
-    for (const round of history) {
-      for (const match of round) {
-        if (!("isFreeGame" in match)) {
-          continue;
-        }
-        if (match.player == player) {
-          return true;
-        }
-      }
-    }
-    return false;
   };
 
   // app/tournament.ts
