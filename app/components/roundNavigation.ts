@@ -1,14 +1,14 @@
-import { createRoundView } from './roundView'
-import { createAlert } from './alert'
+import { createRoundView } from './roundView.js'
+import { createAlert } from './alert.js'
 
-import { htmlElement } from '../dom'
+import { htmlElement } from '../dom.js'
 import {
   calculateCurrentRound,
   tournamentHasStarted,
   incrementRoundCount,
-} from '../tournament'
-import { load } from '../storage'
-import { render } from '../app'
+} from '../tournament.js'
+import { load } from '../storage.js'
+import { render } from '../app.js'
 
 export const highlightRoundNavItem = (roundNumber: number) => {
   let items = document.getElementsByClassName('nav-round')

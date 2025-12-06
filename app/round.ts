@@ -6,9 +6,13 @@ import type {
   RegularMatch,
   FreeGameMatch,
   Ranking,
+  FreeGameStrategy,
 } from './types.js'
 import { calculateRanking, sortTeamsByRanking } from './ranking.js'
-import { calculateFreeGamers } from './freeGamers.js'
+import {
+  calculateFreeGamers,
+  DEFAULT_FREE_GAME_STRATEGY,
+} from './freeGamers.js'
 import { getActiveParticipants, calculateCurrentRound } from './tournament.js'
 import { setDiff, popRandom, drawRandom } from './utils.js'
 import { dump, load } from './storage.js'
@@ -39,7 +43,15 @@ export const determineTeams = (
   history: History
 ): [Team[], Player[]] => {
   const forbiddenPairings = calculateForbiddenPartners(participants, history)
-  const freeGamers = calculateFreeGamers(participants, history)
+  const freeGameStrategy = load(
+    'freeGameStrategy',
+    DEFAULT_FREE_GAME_STRATEGY
+  ) as FreeGameStrategy
+  const freeGamers = calculateFreeGamers(
+    participants,
+    history,
+    freeGameStrategy
+  )
   if (history.length == 0) {
     return [determineTeamsForFirstRound(participants, freeGamers), freeGamers]
   }

@@ -6,7 +6,7 @@ import {
   importTournament,
   exportTournament,
   openImportFileDialogue,
-} from '../app'
+} from '../app.js'
 
 export const createHeader = () => {
   const dom = htmlElement(

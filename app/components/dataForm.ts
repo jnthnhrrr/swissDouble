@@ -1,7 +1,7 @@
 import { dump } from '../storage.js'
 import { readFromInputField, htmlElement } from '../dom.js'
 
-import { startTournament } from '../app'
+import { startTournament } from '../app.js'
 
 export const createDataForm = () => {
   const dataForm = htmlElement(
@@ -24,6 +24,29 @@ export const createDataForm = () => {
             value="5"
           />
         </div>
+      </div>
+
+      <div class="label">Freilos-Vergabe</div>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="free-game-strategy"
+            value="bottom-ranking"
+            id="radio-bottom-ranking"
+            checked
+          />
+          Von Unten
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="free-game-strategy"
+            value="random"
+            id="radio-random"
+          />
+          Zufällig
+        </label>
       </div>
 
       <div class="label">Setzung</div>
@@ -107,3 +130,32 @@ export const readTitle = () => readFromInputField('input-title')
 
 export const readRoundCount = () =>
   Number(readFromInputField('input-round-count')) as number
+
+export const readFreeGameStrategy = (): 'bottom-ranking' | 'random' => {
+  const bottomRankingRadio = document.getElementById(
+    'radio-bottom-ranking'
+  ) as HTMLInputElement
+  if (bottomRankingRadio?.checked) {
+    return 'bottom-ranking'
+  }
+  return 'random'
+}
+
+export const writeFreeGameStrategy = (
+  strategy: 'bottom-ranking' | 'random'
+) => {
+  const bottomRankingRadio = document.getElementById(
+    'radio-bottom-ranking'
+  ) as HTMLInputElement
+  const randomRadio = document.getElementById(
+    'radio-random'
+  ) as HTMLInputElement
+
+  if (strategy === 'bottom-ranking') {
+    if (bottomRankingRadio) bottomRankingRadio.checked = true
+    if (randomRadio) randomRadio.checked = false
+  } else {
+    if (bottomRankingRadio) bottomRankingRadio.checked = false
+    if (randomRadio) randomRadio.checked = true
+  }
+}

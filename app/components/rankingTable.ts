@@ -6,17 +6,17 @@ import type {
   History,
   RankingRow,
   DepartedPlayersRecord,
-} from '../types'
-import { load } from '../storage'
-import { groupBy } from '../utils'
-import { htmlElement } from '../dom'
+} from '../types.js'
+import { load } from '../storage.js'
+import { groupBy } from '../utils.js'
+import { htmlElement } from '../dom.js'
 import {
   calculateCurrentRound,
   tournamentHasStarted,
   tournamentHasFinished,
-} from '../tournament'
-import { calculateRanking } from '../ranking'
-import { roundIsOpen } from '../round'
+} from '../tournament.js'
+import { calculateRanking } from '../ranking.js'
+import { roundIsOpen } from '../round.js'
 
 const titleDom = (title: string) =>
   htmlElement(

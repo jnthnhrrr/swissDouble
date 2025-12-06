@@ -1,19 +1,19 @@
-import { createAlert } from './alert'
-import { highlightRoundNavItem } from './roundNavigation'
+import { createAlert } from './alert.js'
+import { highlightRoundNavItem } from './roundNavigation.js'
 import {
   reopenRound,
   createReopenRoundConfirmation,
-} from './reopenRoundConfirmation'
+} from './reopenRoundConfirmation.js'
 
-import type { FreeGameMatch, RegularMatch, Player, Points } from '../types'
-import { resetNextRound, setNextRound } from '../round'
-import { calculateCurrentRound, tournamentHasFinished } from '../tournament'
-import { load, dump, erase } from '../storage'
-import { isTruthy } from '../utils'
-import { htmlElement } from '../dom'
-import { calculatePoints } from '../ranking'
+import type { FreeGameMatch, RegularMatch, Player, Points } from '../types.js'
+import { resetNextRound, setNextRound } from '../round.js'
+import { calculateCurrentRound, tournamentHasFinished } from '../tournament.js'
+import { load, dump, erase } from '../storage.js'
+import { isTruthy } from '../utils.js'
+import { htmlElement } from '../dom.js'
+import { calculatePoints } from '../ranking.js'
 
-import { render } from '../app'
+import { render } from '../app.js'
 
 const freeGameDom = (match: FreeGameMatch, points: Record<Player, Points>) =>
   htmlElement(

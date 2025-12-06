@@ -6,8 +6,25 @@
 2. No two players are partnered more than once in a tournament.
 3. The partnering is independent from the points or Buchholz ranking players
    have, with one exception:
-4. In each round, the players who have the lowest rank and have not yet had a
-   free game, will be assigned a free game.
+4. In each round, free games are assigned to players when the number of
+   participants is not divisible by 4. The assignment follows a fair distribution
+   rule: no player receives a second free game until all players have received
+   at least one free game.
+
+## Free Game Assignment
+
+When the number of participants is not divisible by 4, in each round, some
+players receive a point without playing a match.
+
+The program supports two options for assigning these "free games", which can
+be selected before the tournament starts:
+
++ Bottom-Ranking: among eligible players (those who have not yet had a
+  free game), selects the lowest-ranked players first, based on their current
+  ranking.
+
++ Random: among eligible players (those with the minimum number of free games so
+  far), randomly selects players.
 
 # Setting
 

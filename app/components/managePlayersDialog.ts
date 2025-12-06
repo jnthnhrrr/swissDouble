@@ -3,9 +3,9 @@ import { createAlert } from './alert.js'
 import type { Player } from '../types.js'
 import { htmlElement } from '../dom.js'
 import { load, dump } from '../storage.js'
-import { resetNextRound } from '../round'
-import { calculateCurrentRound } from '../tournament'
-import { calculateRanking } from '../ranking'
+import { resetNextRound } from '../round.js'
+import { calculateCurrentRound } from '../tournament.js'
+import { calculateRanking } from '../ranking.js'
 
 import { render } from '../app.js'
 

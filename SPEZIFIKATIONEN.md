@@ -10,8 +10,25 @@
 4. Die Paarzuteilung ist unabhängig von den Punkten oder der Buchholz-Wertung
    der Spieler:innen, mit einer Ausnahme:
 
-5. In jeder Runde erhalten die Spieler:innen mit der niedrigsten Platzierung,
-   die noch kein Freilos hatten, ein Freilos zugewiesen.
+5. In jeder Runde werden Freilose zugewiesen, wenn die Anzahl der
+   Teilnehmer:innen nicht durch 4 teilbar ist. Die Zuweisung folgt einer
+   fairen Verteilungsregel: Keine:r Spieler:in erhält ein zweites Freilos,
+   bevor alle Spieler:innen mindestens ein Freilos erhalten haben.
+
+## Freilos-Vergabe
+
+Wenn die Zahl der Teilnehmer:innen nicht durch 4 teilbar ist, erhalten in jeder
+Runde einige Spieler "kampflos" einen Punkt.
+
+Das Programm unterstützt zwei Optionen für die Vergabe dieser "Freilose", die
+vor Turnierbeginn ausgewählt werden können:
+
++ Von Unten: wählt unter den berechtigten Spieler:innen (diejenigen, die bisher
+  noch kein Freilos hatten) zuerst die am niedrigsten platzierten Spieler:innen
+  aus, basierend auf ihrer aktuellen Platzierung.
+
++ Zufällig: wählt unter den berechtigten Spieler:innen zufällig Spieler:innen
+  aus.
 
 # Setzung
 

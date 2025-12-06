@@ -23,6 +23,8 @@ export type Ranking = RankingRow[]
 
 export type DepartedPlayersRecord = Record<Player, number>
 
+export type FreeGameStrategy = 'bottom-ranking' | 'random'
+
 export type TournamentTitle = string
 export interface Tournament {
   title: TournamentTitle
@@ -30,4 +32,5 @@ export interface Tournament {
   participants: Player[]
   roundCount: number
   departedPlayers: DepartedPlayersRecord
+  freeGameStrategy: FreeGameStrategy
 }

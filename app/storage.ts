@@ -1,8 +1,9 @@
-import type { Tournament, TournamentTitle } from './types'
+import type { Tournament, TournamentTitle, FreeGameStrategy } from './types.js'
 
 export interface StorageSchema extends Tournament {
   correctingRound: number
   savedTournaments: Record<TournamentTitle, Tournament>
+  freeGameStrategy: FreeGameStrategy
 }
 export type StorageKey = keyof StorageSchema
 
@@ -14,6 +15,7 @@ export const STORAGE_KEYS: StorageKey[] = [
   'departedPlayers',
   'savedTournaments',
   'correctingRound',
+  'freeGameStrategy',
 ]
 
 interface Loading {

@@ -1,29 +1,34 @@
-import { Tournament, TournamentTitle } from './types'
+import { Tournament, TournamentTitle } from './types.js'
 import { load, dump, erase, StorageKey, STORAGE_KEYS } from './storage.js'
 import { isTruthy, findDuplicates } from './utils.js'
 import { writeToInputField } from './dom.js'
+import { DEFAULT_FREE_GAME_STRATEGY } from './freeGamers.js'
 
-import { setNextRound } from './round'
-import { tournamentHasStarted, calculateCurrentRound } from './tournament'
+import { setNextRound } from './round.js'
+import { tournamentHasStarted, calculateCurrentRound } from './tournament.js'
 
-import { createAlert } from './components/alert'
+import { createAlert } from './components/alert.js'
 import {
   createDataForm,
   readParticipants,
   onParticipantInputChange,
   readRoundCount,
   readTitle,
-} from './components/dataForm'
-import { createHeader } from './components/header'
-import { createFooter } from './components/footer'
-import { createRoundView, destroyRoundView } from './components/roundView'
+  readFreeGameStrategy,
+  writeFreeGameStrategy,
+} from './components/dataForm.js'
+import { createHeader } from './components/header.js'
+import { createFooter } from './components/footer.js'
+import { createRoundView, destroyRoundView } from './components/roundView.js'
 import {
   createRoundNavigation,
   destroyRoundNavigation,
-} from './components/roundNavigation'
-import { createRankingTable } from './components/rankingTable'
+} from './components/roundNavigation.js'
+import { createRankingTable } from './components/rankingTable.js'
 
-window.onload = () => render()
+if (typeof window !== 'undefined') {
+  window.onload = () => render()
+}
 
 export const render = () => {
   destroyRoundNavigation()
@@ -57,6 +62,11 @@ export const render = () => {
   roundCount &&
     writeToInputField('input-round-count', String(roundCount)) &&
     createRoundNavigation(roundCount)
+  const freeGameStrategy = load(
+    'freeGameStrategy',
+    DEFAULT_FREE_GAME_STRATEGY
+  ) as 'bottom-ranking' | 'random'
+  writeFreeGameStrategy(freeGameStrategy)
 }
 
 export const startTournament = () => {
@@ -78,9 +88,11 @@ export const startTournament = () => {
   }
 
   const roundCount = readRoundCount()
+  const freeGameStrategy = readFreeGameStrategy()
   dump('participants', participants)
   dump('roundCount', roundCount)
   dump('title', readTitle())
+  dump('freeGameStrategy', freeGameStrategy)
   dump('history', history)
 
   setNextRound(history, roundCount)
@@ -106,6 +118,7 @@ export const storeTournament = () => {
     participants: load('participants'),
     roundCount: load('roundCount'),
     departedPlayers: load('departedPlayers'),
+    freeGameStrategy: load('freeGameStrategy', DEFAULT_FREE_GAME_STRATEGY),
   }
   let storeValue = load('savedTournaments') || {}
   storeValue[title] = tournament
@@ -115,7 +128,12 @@ export const storeTournament = () => {
 export const openTournament = (title: TournamentTitle) => {
   storeTournament()
 
-  const tournament: Tournament = load('savedTournaments')[title]
+  const savedTournaments = load('savedTournaments')
+  const tournament: Tournament = {
+    ...savedTournaments[title],
+    freeGameStrategy:
+      savedTournaments[title].freeGameStrategy || DEFAULT_FREE_GAME_STRATEGY,
+  }
   for (const key of Object.keys(tournament) as (keyof Tournament)[]) {
     dump(key, tournament[key])
   }
@@ -165,6 +183,20 @@ export const importTournament = (event: Event) => {
   const reader = new FileReader()
   reader.onload = function (e) {
     const data = JSON.parse(e.target!.result as string)
+
+    if (data.savedTournaments) {
+      const savedTournaments = data.savedTournaments
+      for (const title in savedTournaments) {
+        if (!savedTournaments[title].freeGameStrategy) {
+          savedTournaments[title].freeGameStrategy = DEFAULT_FREE_GAME_STRATEGY
+        }
+      }
+      data.savedTournaments = savedTournaments
+    }
+
+    if (!data.freeGameStrategy) {
+      data.freeGameStrategy = DEFAULT_FREE_GAME_STRATEGY
+    }
 
     for (const key of Object.keys(data) as StorageKey[]) {
       const value = data[key]

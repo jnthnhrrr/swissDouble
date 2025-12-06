@@ -465,6 +465,27 @@ h2 {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.radio-label input[type='radio'] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
 .alert {
   z-index: 2;
   width: 100%;
@@ -503,7 +524,8 @@ h2 {
     "title",
     "departedPlayers",
     "savedTournaments",
-    "correctingRound"
+    "correctingRound",
+    "freeGameStrategy"
   ];
   var ROOT = "swiss-double";
   var getStoreValue = () => {
@@ -590,121 +612,6 @@ h2 {
     return element;
   }
 
-  // app/ranking.ts
-  var calculatePoints = (participants, history) => {
-    let ranking = {};
-    for (const participant of participants) {
-      ranking[participant] = 0;
-    }
-    for (const round of history) {
-      if (roundIsOpen(round)) {
-        continue;
-      }
-      for (const match of round) {
-        if ("isFreeGame" in match) {
-          ranking[match.player] += 1;
-          continue;
-        }
-        for (const winningPlayer of match.teams[match.winningTeam]) {
-          ranking[winningPlayer] += 1;
-        }
-      }
-    }
-    return ranking;
-  };
-  var calculateBuchholz = (points, history) => {
-    const buchholz = {};
-    for (const player of Object.keys(points)) {
-      buchholz[player] = 0;
-    }
-    for (const round of history) {
-      if (roundIsOpen(round)) {
-        continue;
-      }
-      for (const match of round) {
-        if ("isFreeGame" in match) {
-          continue;
-        }
-        const teams = match.teams;
-        buchholz[teams[0][0]] -= points[teams[0][1]];
-        buchholz[teams[0][1]] -= points[teams[0][0]];
-        buchholz[teams[1][0]] -= points[teams[1][1]];
-        buchholz[teams[1][1]] -= points[teams[1][0]];
-        buchholz[teams[0][0]] += points[teams[1][0]] + points[teams[1][1]];
-        buchholz[teams[0][1]] += points[teams[1][0]] + points[teams[1][1]];
-        buchholz[teams[1][0]] += points[teams[0][0]] + points[teams[0][1]];
-        buchholz[teams[1][1]] += points[teams[0][0]] + points[teams[0][1]];
-      }
-    }
-    return buchholz;
-  };
-  var calculateRanking = (participants, history) => {
-    let points = calculatePoints(participants, history);
-    let buchholz = calculateBuchholz(points, history);
-    let ranking = participants.map((participant) => [
-      participant,
-      points[participant],
-      buchholz[participant]
-    ]);
-    return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2]);
-  };
-  var sortTeamsByRanking = (teams, ranking) => {
-    const rankingMap = {};
-    for (const [player, points, buchholz] of ranking) {
-      rankingMap[player] = [points, buchholz];
-    }
-    teams.sort((thisTeam, otherTeam) => {
-      const thisTeamPoints = rankingMap[thisTeam[0]][0] + rankingMap[thisTeam[1]][0];
-      const otherTeamPoints = rankingMap[otherTeam[0]][0] + rankingMap[otherTeam[1]][0];
-      const thisTeamBuchholz = rankingMap[thisTeam[0]][1] + rankingMap[thisTeam[1]][1];
-      const otherTeamBuchholz = rankingMap[otherTeam[0]][1] + rankingMap[otherTeam[1]][1];
-      if (thisTeamPoints == otherTeamPoints) {
-        return thisTeamBuchholz > otherTeamBuchholz ? -1 : 1;
-      }
-      return thisTeamPoints > otherTeamPoints ? -1 : 1;
-    });
-    return teams;
-  };
-
-  // app/freeGamers.ts
-  var getFreeGameCount = (player, history) => {
-    let count = 0;
-    for (const round of history) {
-      for (const match of round) {
-        if (!("isFreeGame" in match)) {
-          continue;
-        }
-        if (match.player == player) {
-          count++;
-        }
-      }
-    }
-    return count;
-  };
-  var calculateFreeGamers = (participants, history) => {
-    let ranking = calculateRanking(participants, history);
-    const participantCount = participants.length;
-    const freeGamesCount = participantCount % 4;
-    let freeGamers = [];
-    if (freeGamesCount == 0) {
-      return freeGamers;
-    }
-    const freeGameCounts = {};
-    for (const participant of participants) {
-      freeGameCounts[participant] = getFreeGameCount(participant, history);
-    }
-    const minFreeGames = Math.min(...Object.values(freeGameCounts));
-    for (const [player, _] of ranking.reverse()) {
-      if (freeGameCounts[player] === minFreeGames) {
-        freeGamers.push(player);
-      }
-      if (freeGamers.length == freeGamesCount) {
-        return freeGamers;
-      }
-    }
-    return freeGamers;
-  };
-
   // app/tournament.ts
   var tournamentHasStarted = (history) => isTruthy(history);
   var tournamentHasFinished = (history, roundCount) => {
@@ -753,7 +660,15 @@ h2 {
   };
   var determineTeams = (participants, history) => {
     const forbiddenPairings = calculateForbiddenPartners(participants, history);
-    const freeGamers = calculateFreeGamers(participants, history);
+    const freeGameStrategy = load(
+      "freeGameStrategy",
+      DEFAULT_FREE_GAME_STRATEGY
+    );
+    const freeGamers = calculateFreeGamers(
+      participants,
+      history,
+      freeGameStrategy
+    );
     if (history.length == 0) {
       return [determineTeamsForFirstRound(participants, freeGamers), freeGamers];
     }
@@ -835,6 +750,146 @@ h2 {
     if (calculateCurrentRound() == roundCount) return;
     const newHistory = [...history, determineNextRound(history)];
     dump("history", newHistory);
+  };
+
+  // app/ranking.ts
+  var calculatePoints = (participants, history) => {
+    let ranking = {};
+    for (const participant of participants) {
+      ranking[participant] = 0;
+    }
+    for (const round of history) {
+      if (roundIsOpen(round)) {
+        continue;
+      }
+      for (const match of round) {
+        if ("isFreeGame" in match) {
+          ranking[match.player] += 1;
+          continue;
+        }
+        for (const winningPlayer of match.teams[match.winningTeam]) {
+          ranking[winningPlayer] += 1;
+        }
+      }
+    }
+    return ranking;
+  };
+  var calculateBuchholz = (points, history) => {
+    const buchholz = {};
+    for (const player of Object.keys(points)) {
+      buchholz[player] = 0;
+    }
+    for (const round of history) {
+      if (roundIsOpen(round)) {
+        continue;
+      }
+      for (const match of round) {
+        if ("isFreeGame" in match) {
+          continue;
+        }
+        const teams = match.teams;
+        buchholz[teams[0][0]] -= points[teams[0][1]];
+        buchholz[teams[0][1]] -= points[teams[0][0]];
+        buchholz[teams[1][0]] -= points[teams[1][1]];
+        buchholz[teams[1][1]] -= points[teams[1][0]];
+        buchholz[teams[0][0]] += points[teams[1][0]] + points[teams[1][1]];
+        buchholz[teams[0][1]] += points[teams[1][0]] + points[teams[1][1]];
+        buchholz[teams[1][0]] += points[teams[0][0]] + points[teams[0][1]];
+        buchholz[teams[1][1]] += points[teams[0][0]] + points[teams[0][1]];
+      }
+    }
+    return buchholz;
+  };
+  var calculateRanking = (participants, history) => {
+    let points = calculatePoints(participants, history);
+    let buchholz = calculateBuchholz(points, history);
+    let ranking = participants.map((participant) => [
+      participant,
+      points[participant],
+      buchholz[participant]
+    ]);
+    return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2]);
+  };
+  var sortTeamsByRanking = (teams, ranking) => {
+    const rankingMap = {};
+    for (const [player, points, buchholz] of ranking) {
+      rankingMap[player] = [points, buchholz];
+    }
+    teams.sort((thisTeam, otherTeam) => {
+      const thisTeamPoints = rankingMap[thisTeam[0]][0] + rankingMap[thisTeam[1]][0];
+      const otherTeamPoints = rankingMap[otherTeam[0]][0] + rankingMap[otherTeam[1]][0];
+      const thisTeamBuchholz = rankingMap[thisTeam[0]][1] + rankingMap[thisTeam[1]][1];
+      const otherTeamBuchholz = rankingMap[otherTeam[0]][1] + rankingMap[otherTeam[1]][1];
+      if (thisTeamPoints == otherTeamPoints) {
+        return thisTeamBuchholz > otherTeamBuchholz ? -1 : 1;
+      }
+      return thisTeamPoints > otherTeamPoints ? -1 : 1;
+    });
+    return teams;
+  };
+
+  // app/freeGamers.ts
+  var DEFAULT_FREE_GAME_STRATEGY = "bottom-ranking";
+  var getFreeGameCount = (player, history) => {
+    let count = 0;
+    for (const round of history) {
+      for (const match of round) {
+        if (!("isFreeGame" in match)) {
+          continue;
+        }
+        if (match.player == player) {
+          count++;
+        }
+      }
+    }
+    return count;
+  };
+  var selectByRanking = (eligiblePlayers, ranking, count) => {
+    const rankingMap = /* @__PURE__ */ new Map();
+    for (let i = 0; i < ranking.length; i++) {
+      rankingMap.set(ranking[i][0], i);
+    }
+    const sortedEligible = [...eligiblePlayers].sort((a, b) => {
+      const rankA = rankingMap.get(a) ?? Infinity;
+      const rankB = rankingMap.get(b) ?? Infinity;
+      return rankA - rankB;
+    });
+    return sortedEligible.slice(0, count);
+  };
+  var selectRandom = (eligiblePlayers, count) => {
+    const selected = [];
+    const available = new Set(eligiblePlayers);
+    for (let i = 0; i < count && available.size > 0; i++) {
+      const player = drawRandom(available);
+      selected.push(player);
+      available.delete(player);
+    }
+    return selected;
+  };
+  var calculateFreeGamers = (participants, history, strategy = DEFAULT_FREE_GAME_STRATEGY) => {
+    let ranking = calculateRanking(participants, history);
+    const participantCount = participants.length;
+    const freeGamesCount = participantCount % 4;
+    let freeGamers = [];
+    if (freeGamesCount == 0) {
+      return freeGamers;
+    }
+    const freeGameCounts = {};
+    for (const participant of participants) {
+      freeGameCounts[participant] = getFreeGameCount(participant, history);
+    }
+    const minFreeGames = Math.min(...Object.values(freeGameCounts));
+    const eligiblePlayers = [];
+    for (const [player, _] of ranking.reverse()) {
+      if (freeGameCounts[player] === minFreeGames) {
+        eligiblePlayers.push(player);
+      }
+    }
+    if (strategy === "random") {
+      return selectRandom(eligiblePlayers, freeGamesCount);
+    } else {
+      return selectByRanking(eligiblePlayers, ranking, freeGamesCount);
+    }
   };
 
   // app/components/alert.ts
@@ -932,6 +987,29 @@ h2 {
         </div>
       </div>
 
+      <div class="label">Freilos-Vergabe</div>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="free-game-strategy"
+            value="bottom-ranking"
+            id="radio-bottom-ranking"
+            checked
+          />
+          Von Unten
+        </label>
+        <label class="radio-label">
+          <input
+            type="radio"
+            name="free-game-strategy"
+            value="random"
+            id="radio-random"
+          />
+          Zuf\xE4llig
+        </label>
+      </div>
+
       <div class="label">Setzung</div>
       <div class="textarea-with-numbers">
         <div class="line-numbers" id="participants-line-numbers">1</div>
@@ -992,6 +1070,30 @@ h2 {
   var readParticipants = () => readFromInputField("input-participants").split("\n").filter((line) => line.trim());
   var readTitle = () => readFromInputField("input-title");
   var readRoundCount = () => Number(readFromInputField("input-round-count"));
+  var readFreeGameStrategy = () => {
+    const bottomRankingRadio = document.getElementById(
+      "radio-bottom-ranking"
+    );
+    if (bottomRankingRadio?.checked) {
+      return "bottom-ranking";
+    }
+    return "random";
+  };
+  var writeFreeGameStrategy = (strategy) => {
+    const bottomRankingRadio = document.getElementById(
+      "radio-bottom-ranking"
+    );
+    const randomRadio = document.getElementById(
+      "radio-random"
+    );
+    if (strategy === "bottom-ranking") {
+      if (bottomRankingRadio) bottomRankingRadio.checked = true;
+      if (randomRadio) randomRadio.checked = false;
+    } else {
+      if (bottomRankingRadio) bottomRankingRadio.checked = false;
+      if (randomRadio) randomRadio.checked = true;
+    }
+  };
 
   // app/components/openDialog.ts
   var createOpenDialog = () => {
@@ -1622,7 +1724,9 @@ h2 {
   };
 
   // app/app.ts
-  window.onload = () => render();
+  if (typeof window !== "undefined") {
+    window.onload = () => render();
+  }
   var render = () => {
     destroyRoundNavigation();
     destroyRoundView();
@@ -1645,6 +1749,11 @@ h2 {
     title && writeToInputField("input-title", load("title"));
     participants && writeToInputField("input-participants", participants.join("\n")) && onParticipantInputChange();
     roundCount && writeToInputField("input-round-count", String(roundCount)) && createRoundNavigation(roundCount);
+    const freeGameStrategy = load(
+      "freeGameStrategy",
+      DEFAULT_FREE_GAME_STRATEGY
+    );
+    writeFreeGameStrategy(freeGameStrategy);
   };
   var startTournament = () => {
     const history = load("history") || [];
@@ -1662,9 +1771,11 @@ h2 {
       return;
     }
     const roundCount = readRoundCount();
+    const freeGameStrategy = readFreeGameStrategy();
     dump("participants", participants);
     dump("roundCount", roundCount);
     dump("title", readTitle());
+    dump("freeGameStrategy", freeGameStrategy);
     dump("history", history);
     setNextRound(history, roundCount);
     render();
@@ -1685,7 +1796,8 @@ h2 {
       history: load("history"),
       participants: load("participants"),
       roundCount: load("roundCount"),
-      departedPlayers: load("departedPlayers")
+      departedPlayers: load("departedPlayers"),
+      freeGameStrategy: load("freeGameStrategy", DEFAULT_FREE_GAME_STRATEGY)
     };
     let storeValue = load("savedTournaments") || {};
     storeValue[title] = tournament;
@@ -1693,7 +1805,11 @@ h2 {
   };
   var openTournament = (title) => {
     storeTournament();
-    const tournament = load("savedTournaments")[title];
+    const savedTournaments = load("savedTournaments");
+    const tournament = {
+      ...savedTournaments[title],
+      freeGameStrategy: savedTournaments[title].freeGameStrategy || DEFAULT_FREE_GAME_STRATEGY
+    };
     for (const key of Object.keys(tournament)) {
       dump(key, tournament[key]);
     }
@@ -1733,6 +1849,18 @@ h2 {
     const reader = new FileReader();
     reader.onload = function(e) {
       const data = JSON.parse(e.target.result);
+      if (data.savedTournaments) {
+        const savedTournaments = data.savedTournaments;
+        for (const title in savedTournaments) {
+          if (!savedTournaments[title].freeGameStrategy) {
+            savedTournaments[title].freeGameStrategy = DEFAULT_FREE_GAME_STRATEGY;
+          }
+        }
+        data.savedTournaments = savedTournaments;
+      }
+      if (!data.freeGameStrategy) {
+        data.freeGameStrategy = DEFAULT_FREE_GAME_STRATEGY;
+      }
       for (const key of Object.keys(data)) {
         const value = data[key];
         dump(key, value);

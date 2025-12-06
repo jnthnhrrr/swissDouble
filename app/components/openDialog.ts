@@ -2,7 +2,7 @@ import { load } from '../storage.js'
 import { isTruthy } from '../utils.js'
 import { htmlElement } from '../dom.js'
 
-import { openTournament } from '../app'
+import { openTournament } from '../app.js'
 
 export const createOpenDialog = () => {
   destroyOpenDialog()
