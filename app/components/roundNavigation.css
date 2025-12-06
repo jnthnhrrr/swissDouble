@@ -30,3 +30,18 @@
   border: 2px solid var(--color-action);
   font-weight: bold;
 }
+
+.nav-round.add-round-button {
+  cursor: pointer;
+  font-weight: bold;
+  background: var(--color-subtle-highlight);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+}
+
+.nav-round.add-round-button:hover {
+  background: var(--color-action) !important;
+}

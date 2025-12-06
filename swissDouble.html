@@ -202,6 +202,21 @@ h2 {
   border: 2px solid var(--color-action);
   font-weight: bold;
 }
+
+.nav-round.add-round-button {
+  cursor: pointer;
+  font-weight: bold;
+  background: var(--color-subtle-highlight);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+}
+
+.nav-round.add-round-button:hover {
+  background: var(--color-action) !important;
+}
 #reopen-round-confirmation {
   z-index: 2;
   width: 100%;
@@ -706,6 +721,15 @@ h2 {
       return !(participant in departedPlayers);
     });
   };
+  var incrementRoundCount = () => {
+    const history = load("history", []);
+    if (!tournamentHasStarted(history)) {
+      return false;
+    }
+    const currentRoundCount = load("roundCount");
+    dump("roundCount", currentRoundCount + 1);
+    return true;
+  };
 
   // app/round.ts
   var determineNextRound = (history) => {
@@ -1110,6 +1134,8 @@ h2 {
   };
   var createRoundNavigation = (focusedRound) => {
     const currentRound = calculateCurrentRound();
+    const history = load("history", []);
+    const tournamentStarted = tournamentHasStarted(history);
     let items = [];
     for (let round = 1; round <= focusedRound; round++) {
       let navItem = htmlElement(
@@ -1131,12 +1157,41 @@ h2 {
       });
       items.push(navItem);
     }
+    if (tournamentStarted) {
+      const addRoundButton = htmlElement(
+        "div",
+        `
+      <div class="nav-round add-round-button" id="add-round-button">
+        +
+      </div>
+    `
+      );
+      addRoundButton.addEventListener("click", () => {
+        confirmIncrementRoundCount();
+      });
+      items.push(addRoundButton);
+    }
     destroyRoundNavigation();
     const dom = htmlElement("div", `<div id="round-nav"></div>`);
     dom.replaceChildren(...items);
     document.getElementById("tournament-data").after(dom);
   };
   var destroyRoundNavigation = () => document.getElementById("round-nav")?.remove();
+  var confirmIncrementRoundCount = () => {
+    const currentRoundCount = load("roundCount");
+    createAlert(
+      `
+    Eine weitere Runde hinzuf\xFCgen?
+
+    Das Turnier wird von ${currentRoundCount} auf ${currentRoundCount + 1} Runden erweitert.
+  `,
+      () => {
+        if (incrementRoundCount()) {
+          render();
+        }
+      }
+    );
+  };
 
   // app/components/reopenRoundConfirmation.ts
   var createReopenRoundConfirmation = (roundNumber, openRoundNumber) => {

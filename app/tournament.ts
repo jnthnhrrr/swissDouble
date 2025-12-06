@@ -1,5 +1,5 @@
 import type { History, Player } from './types.js'
-import { load } from './storage.js'
+import { load, dump } from './storage.js'
 import { isTruthy } from './utils.js'
 import { roundIsOpen } from './round.js'
 
@@ -21,4 +21,14 @@ export const getActiveParticipants = (): Player[] => {
   return participants.filter((participant) => {
     return !(participant in departedPlayers)
   })
+}
+
+export const incrementRoundCount = (): boolean => {
+  const history = load('history', [])
+  if (!tournamentHasStarted(history)) {
+    return false
+  }
+  const currentRoundCount = load('roundCount') as number
+  dump('roundCount', currentRoundCount + 1)
+  return true
 }
