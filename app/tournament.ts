@@ -10,7 +10,6 @@ export const tournamentHasFinished = (history: History, roundCount: number) => {
 }
 
 export const calculateCurrentRound = (): number => {
-  // which round is current round, 1-indexed
   const history = load('history')
   return history.length
 }

@@ -912,20 +912,54 @@ h2 {
     }
     return buchholz;
   };
+  var calculateSetPoints = (participants, history) => {
+    const setPoints = {};
+    for (const participant of participants) {
+      setPoints[participant] = 0;
+    }
+    for (const round of history) {
+      if (roundIsOpen(round)) {
+        continue;
+      }
+      for (const match of round) {
+        if ("isFreeGame" in match) {
+          continue;
+        }
+        if (!("setsWon" in match) || !match.setsWon) {
+          continue;
+        }
+        if (match.setsWon[0] === null || match.setsWon[1] === null) {
+          continue;
+        }
+        const teams = match.teams;
+        const setsWon0 = match.setsWon[0];
+        const setsWon1 = match.setsWon[1];
+        setPoints[teams[0][0]] += setsWon0 - setsWon1;
+        setPoints[teams[0][1]] += setsWon0 - setsWon1;
+        setPoints[teams[1][0]] += setsWon1 - setsWon0;
+        setPoints[teams[1][1]] += setsWon1 - setsWon0;
+      }
+    }
+    return setPoints;
+  };
   var calculateRanking = (participants, history) => {
     let points = calculatePoints(participants, history);
     let buchholz = calculateBuchholz(points, history);
+    let setPoints = calculateSetPoints(participants, history);
     let ranking = participants.map((participant) => [
       participant,
       points[participant],
-      buchholz[participant]
+      buchholz[participant],
+      setPoints[participant]
     ]);
-    return ranking.sort((here, there) => there[1] - here[1] || there[2] - here[2]);
+    return ranking.sort(
+      (here, there) => there[1] - here[1] || there[2] - here[2] || there[3] - here[3]
+    );
   };
   var sortTeamsByRanking = (teams, ranking) => {
     const rankingMap = {};
-    for (const [player, points, buchholz] of ranking) {
-      rankingMap[player] = [points, buchholz];
+    for (const [player, points, buchholz, setPoints] of ranking) {
+      rankingMap[player] = [points, buchholz, setPoints];
     }
     teams.sort((thisTeam, otherTeam) => {
       const thisTeamPoints = rankingMap[thisTeam[0]][0] + rankingMap[thisTeam[1]][0];
@@ -1958,6 +1992,7 @@ h2 {
         <th>Name</th>
         <th>Punkte</th>
         <th>Buchholz</th>
+        <th>Satzpunkte</th>
       </tr>
     `
       )
@@ -1965,9 +2000,10 @@ h2 {
     let rank = 1;
     let dark = true;
     for (const group of rankingGroups) {
-      for (const [name, points, buchholz] of group) {
+      for (const [name, points, buchholz, setPoints] of group) {
         const isDeparted = departedPlayers && departedPlayers[name] !== void 0;
         const departedText = isDeparted ? ` (nach Runde ${departedPlayers[name]})` : "";
+        const formattedSetPoints = setPoints > 0 ? `+${setPoints}` : setPoints < 0 ? `${setPoints}` : "0";
         rows.push(
           htmlElement(
             "tr",
@@ -1977,6 +2013,7 @@ h2 {
             <td>${name}${departedText}</td>
             <td>${points}</td>
             <td>${buchholz}</td>
+            <td>${formattedSetPoints}</td>
           </tr>
         `
           )
@@ -1991,7 +2028,7 @@ h2 {
   var groupRankingByPointsAndBuchholz = (ranking) => {
     return groupBy(
       ranking,
-      ([thisPlayer, thisPoints, thisBuchholz], [thatPlayer, thatPoints, thatBuchholz]) => thisPoints == thatPoints && thisBuchholz == thatBuchholz
+      ([thisPlayer, thisPoints, thisBuchholz, thisSetPoints], [thatPlayer, thatPoints, thatBuchholz, thatSetPoints]) => thisPoints == thatPoints && thisBuchholz == thatBuchholz && thisSetPoints == thatSetPoints
     );
   };
   var createRankingTable = (participants, history) => {

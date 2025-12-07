@@ -1,7 +1,3 @@
-/*************************
- *        GENERAL        *
- ************************/
-
 export const setDiff = (these: string[], those: string[]) =>
   new Set([...these].filter((element) => !those.includes(element)))
 
@@ -14,8 +10,6 @@ export const findDuplicates = (array: string[]) =>
   array.filter((item, index) => array.indexOf(item) !== index)
 
 export const isTruthy = (value: any) => {
-  // a more pythonic implementation of truthyness, regarding empty collections
-  // as falsy
   try {
     return !!value.length
   } catch {}
@@ -31,7 +25,6 @@ export const isTruthy = (value: any) => {
 export const randomId = () => Math.random().toString(36).replace(/^0\./, '_')
 
 export const groupBy = <T>(array: T[], comparator: Function) => {
-  // requires array to be pre-sorted by projection function
   if (!isTruthy(array)) return []
   const groups: T[][] = []
   let currentGroup = [array[0]]

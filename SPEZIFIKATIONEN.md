@@ -100,12 +100,17 @@ Vor Turnierbeginn kann die Anzahl der Gewinnsätze konfiguriert werden.
 
 # Rangliste
 
-1. Die Teilnehmer:innen werden nach ihren Spielpunkten und als zweites Kriterium
-   nach ihrer Buchholz-Wertung eingestuft. Die Satzpunkte werden nicht
-   berücksichtigt.
+1. Die Teilnehmer:innen werden nach ihren Spielpunkten, als zweites Kriterium
+   nach ihrer Buchholz-Wertung und als drittes Kriterium nach ihren Satzpunkten
+   eingestuft.
 
-2. Wir berechnen die Buchholz-Wertung ein:er Spieler:in als die Summe der Punkte
-   ihrer Gegner:innen minus die Summe der Punkte ihrer Partner:innen.
+2. Die Buchholz-Wertung ein:er Spieler:in wird als die Summe der Punkte
+   ihrer Gegner:innen minus die Summe der Punkte ihrer Partner:innen berechnet.
+
+3. Satzpunkte werden als Differenz zwischen gewonnenen und verlorenen Sätzen
+   über alle abgeschlossenen Spiele berechnet. Für jedes Spiel erhält ein:e
+   Spieler:in Satzpunkte gleich der Anzahl der von ihrem Team gewonnenen Sätze
+   minus der Anzahl der von ihrem Team verlorenen Sätze.
 
 # Edge-Cases
 

@@ -75,6 +75,7 @@ const tableDom = (
         <th>Name</th>
         <th>Punkte</th>
         <th>Buchholz</th>
+        <th>Satzpunkte</th>
       </tr>
     `
     )
@@ -82,11 +83,14 @@ const tableDom = (
   let rank = 1
   let dark = true
   for (const group of rankingGroups) {
-    for (const [name, points, buchholz] of group) {
+    for (const [name, points, buchholz, setPoints] of group) {
       const isDeparted = departedPlayers && departedPlayers[name] !== undefined
       const departedText = isDeparted
         ? ` (nach Runde ${departedPlayers[name]})`
         : ''
+
+      const formattedSetPoints =
+        setPoints > 0 ? `+${setPoints}` : setPoints < 0 ? `${setPoints}` : '0'
 
       rows.push(
         htmlElement(
@@ -99,6 +103,7 @@ const tableDom = (
             <td>${name}${departedText}</td>
             <td>${points}</td>
             <td>${buchholz}</td>
+            <td>${formattedSetPoints}</td>
           </tr>
         `
         )
@@ -115,9 +120,12 @@ const groupRankingByPointsAndBuchholz = (ranking: Ranking) => {
   return groupBy(
     ranking,
     (
-      [thisPlayer, thisPoints, thisBuchholz]: RankingRow,
-      [thatPlayer, thatPoints, thatBuchholz]: RankingRow
-    ) => thisPoints == thatPoints && thisBuchholz == thatBuchholz
+      [thisPlayer, thisPoints, thisBuchholz, thisSetPoints]: RankingRow,
+      [thatPlayer, thatPoints, thatBuchholz, thatSetPoints]: RankingRow
+    ) =>
+      thisPoints == thatPoints &&
+      thisBuchholz == thatBuchholz &&
+      thisSetPoints == thatSetPoints
   )
 }
 

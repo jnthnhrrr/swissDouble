@@ -72,7 +72,6 @@ export const drawTeams = (
   forbiddenPartners: Record<Player, Set<Player>>,
   freeGamers: Player[]
 ): Team[] => {
-  // Drawing teams randomly, for every round but the first one
   const players = setDiff(participants, freeGamers)
   let teams: Team[] = []
   while (players.size > 0) {
@@ -83,7 +82,6 @@ export const drawTeams = (
       [...forbiddenPartners[playerOne]]
     )
     if (possiblePartners.size == 0) {
-      // No possible solution with the current drawing, try again from scratch
       return drawTeams(participants, forbiddenPartners, freeGamers)
     }
     const playerTwo = drawRandom(possiblePartners)
@@ -97,13 +95,6 @@ export const determineTeamsForFirstRound = (
   participants: Player[],
   freeGamers: Player[]
 ): Team[] => {
-  // This implements the requirement that in the first round, we want to pair
-  // each player from the top half of the list with a player from the bottom
-  // half.
-  //
-  // Here, there is no need to check for forbiddenPairings because we are in
-  // first round
-
   const players = [...setDiff(participants, freeGamers)]
   let teams: Team[] = []
   const breakIndex = players.length / 2
@@ -120,7 +111,6 @@ export const calculateForbiddenPartners = (
   participants: Player[],
   history: History
 ) => {
-  // Use all participants including departed players for forbidden partners calculation
   const allParticipants = load('participants') as Player[]
   let forbiddenPartners: Record<Player, Set<Player>> = {}
   for (const participant of allParticipants) {
@@ -145,7 +135,6 @@ export const roundIsOpen = (round: Round) => {
     if ('isFreeGame' in match) {
       return false
     }
-    // winningTeam is the definitive check - if it's null, the round is open
     return match.winningTeam === null || match.winningTeam === undefined
   })
 }

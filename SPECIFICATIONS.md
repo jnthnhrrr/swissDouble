@@ -91,10 +91,16 @@ from 0 to the number of sets to win, then wraps back to 0.
 
 # Ranking
 
-1. Participants are ranked by their points and, as a second criterion, by their
-ranking according to Buchholz.
-2. We calculate the Buchholz ranking of a player as the sum of the points of
+1. Participants are ranked by their points, as a second criterion by their
+ranking according to Buchholz, and as a third criterion by their set points
+(Satzpunkte).
+
+2. The Buchholz ranking of a player is calculated as the sum of the points of
 their opponents minus the sum of the points of their partners.
+
+3. Set points (Satzpunkte) are calculated as the difference between sets won and
+sets lost across all completed matches. For each match, a player receives set
+points equal to their team's sets won minus their team's sets lost.
 
 # Edge Cases and Limitations
 

@@ -205,8 +205,6 @@ export const openImportFileDialogue = () => {
 }
 
 export const importTournament = (event: Event) => {
-  // This does not contain validation that the stored file complies with the
-  // StorageSchema
   const file = (event.target as HTMLInputElement).files![0]
 
   if (!file) {

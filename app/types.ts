@@ -61,7 +61,8 @@ export type History = Round[]
 
 export type Points = number
 export type Buchholz = number
-export type RankingRow = [Player, Points, Buchholz]
+export type SetPoints = number
+export type RankingRow = [Player, Points, Buchholz, SetPoints]
 export type Ranking = RankingRow[]
 
 export type DepartedPlayersRecord = Record<Player, number>

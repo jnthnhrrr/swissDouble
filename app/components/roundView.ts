@@ -224,7 +224,6 @@ export const createRoundView = (focusedRound: number) => {
 
   if (!isTruthy(history)) return
 
-  // Ensure history is migrated before using it
   history = migrateHistory(history)
 
   const participants = load('participants')
@@ -233,16 +232,14 @@ export const createRoundView = (focusedRound: number) => {
   const tournamentIsOver = tournamentHasFinished(history, roundCount)
   const tournamentIsNotOverYet = !tournamentIsOver
 
-  // Calculate points up to and including the focused round if it's closed
-  // Otherwise, calculate points up to (but not including) the focused round
   const focusedRoundIndex = focusedRound - 1
   const focusedRoundData = history[focusedRoundIndex]
   const isFocusedRoundClosed =
     focusedRoundData && !checkRoundIsOpen(focusedRoundData)
 
   const historyForPoints = isFocusedRoundClosed
-    ? history.slice(0, focusedRound) // Include focused round if closed
-    : history.slice(0, focusedRoundIndex) // Exclude focused round if open
+    ? history.slice(0, focusedRound)
+    : history.slice(0, focusedRoundIndex)
 
   const points = calculatePoints(participants, historyForPoints)
 
@@ -409,11 +406,6 @@ const closeRound = (roundNumber: number) => {
     }
 
     const regularMatch = match as RegularMatch
-    // At this point, we've validated that there's a winner:
-    // - Either team0HasWin or team1HasWin is true
-    // - Both values are non-null (checked in validation: team0HasWin/team1HasWin require non-null)
-    // - One team has setsToWin, the other doesn't
-    // So we can safely set both values as numbers
     if (team0Value === null || team1Value === null) {
       createAlert(`
         Fehler: Unerwarteter Zustand beim Speichern der Ergebnisse.
@@ -422,7 +414,6 @@ const closeRound = (roundNumber: number) => {
     }
     regularMatch.setsWon = [team0Value, team1Value] as [number, number]
 
-    // Verify that winningTeam is now non-null (should never fail if validation was correct)
     if (regularMatch.winningTeam === null) {
       createAlert(`
         Fehler beim Speichern der Ergebnisse. Bitte versuchen Sie es erneut.

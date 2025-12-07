@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { JSDOM } from 'jsdom'
 import { calculatePoints, calculateRanking, calculateBuchholz } from '../../../dist/ranking.js'
+import { RegularMatch } from '../../../dist/types.js'
 import { dump } from '../../../dist/storage.js'
 
 describe('Ranking', function () {
@@ -90,10 +91,11 @@ describe('Ranking', function () {
         const result = calculateRanking(participants, history)
 
         expect(result).to.have.length(3)
-        result.forEach(([player, points, buchholz]) => {
+        result.forEach(([player, points, buchholz, setPoints]) => {
           expect(participants).to.include(player)
           expect(points).to.equal(0)
           expect(buchholz).to.equal(0)
+          expect(setPoints).to.equal(0)
         })
       })
 
@@ -114,22 +116,22 @@ describe('Ranking', function () {
         const participants = ['Player1', 'Player2', 'Player3', 'Player4']
         const history = [
           [
-            {
-              teams: [
+            new RegularMatch(
+              [
                 ['Player1', 'Player2'],
                 ['Player3', 'Player4'],
               ],
-              winningTeam: 0,
-            },
+              [1, 0]
+            ),
           ],
           [
-            {
-              teams: [
+            new RegularMatch(
+              [
                 ['Player1', 'Player3'],
                 ['Player2', 'Player4'],
               ],
-              winningTeam: 0,
-            },
+              [1, 0]
+            ),
           ],
         ]
 
@@ -151,13 +153,13 @@ describe('Ranking', function () {
         const participants = ['Player1', 'Player2', 'Player3', 'Player4']
         const history = [
           [
-            {
-              teams: [
+            new RegularMatch(
+              [
                 ['Player1', 'Player2'],
                 ['Player3', 'Player4'],
               ],
-              winningTeam: 1, // Player3, Player4 win (1 point each)
-            },
+              [0, 1]
+            ),
           ],
         ]
 
@@ -187,22 +189,22 @@ describe('Ranking', function () {
         // Create scenario where two players have same points but different buchholz
         const history = [
           [
-            {
-              teams: [
+            new RegularMatch(
+              [
                 ['Player1', 'Player2'],
                 ['Player3', 'Player4'],
               ],
-              winningTeam: 0, // Player1, Player2 win
-            },
+              [1, 0]
+            ),
           ],
           [
-            {
-              teams: [
+            new RegularMatch(
+              [
                 ['Player1', 'Player4'],
                 ['Player2', 'Player3'],
               ],
-              winningTeam: 1, // Player2, Player3 win
-            },
+              [0, 1]
+            ),
           ],
         ]
 
@@ -211,10 +213,10 @@ describe('Ranking', function () {
         // Player1 and Player2 both have 1 point, Player3 has 1 point, Player4 has 0
         // Verify the structure is correct
         expect(result).to.have.length(4)
-        expect(result[0]).to.have.length(3) // [player, points, buchholz]
-        expect(result[1]).to.have.length(3)
-        expect(result[2]).to.have.length(3)
-        expect(result[3]).to.have.length(3)
+        expect(result[0]).to.have.length(4) // [player, points, buchholz, setPoints]
+        expect(result[1]).to.have.length(4)
+        expect(result[2]).to.have.length(4)
+        expect(result[3]).to.have.length(4)
 
         // Check that points are calculated correctly
         const pointsMap = {}
@@ -225,6 +227,92 @@ describe('Ranking', function () {
         expect(pointsMap['Player2']).to.equal(2)
         expect(pointsMap['Player3']).to.equal(1)
         expect(pointsMap['Player4']).to.equal(0)
+      })
+    })
+
+    describe('sorting by set points as tiebreaker', () => {
+      it('uses set points to break ties when points and buchholz are equal', () => {
+        dump('setsToWin', 1)
+        const participants = ['Player1', 'Player2', 'Player3', 'Player4']
+        const history = [
+          [
+            new RegularMatch(
+              [
+                ['Player1', 'Player2'],
+                ['Player3', 'Player4'],
+              ],
+              [1, 0]
+            ),
+          ],
+          [
+            new RegularMatch(
+              [
+                ['Player1', 'Player3'],
+                ['Player2', 'Player4'],
+              ],
+              [1, 0]
+            ),
+          ],
+        ]
+
+        const result = calculateRanking(participants, history)
+
+        // Player1 has 2 points, Player2 has 1 point, Player3 has 0 points, Player4 has 0 points
+        // Player1 should be first with 2 points
+        const player1Result = result.find((r) => r[0] === 'Player1')
+        expect(player1Result[1]).to.equal(2) // 2 points
+        expect(player1Result[3]).to.equal(2) // +1 +1 = 2 set points
+
+        // Verify sorting: points first, then buchholz, then set points
+        expect(result[0][1]).to.be.at.least(result[1][1])
+        if (result[0][1] === result[1][1]) {
+          expect(result[0][2]).to.be.at.least(result[1][2])
+          if (result[0][2] === result[1][2]) {
+            expect(result[0][3]).to.be.at.least(result[1][3])
+          }
+        }
+      })
+
+      it('sorts correctly when set points differ but points and buchholz are equal', () => {
+        dump('setsToWin', 3)
+        const participants = ['Player1', 'Player2', 'Player3', 'Player4']
+        // Create scenario where players have same points and buchholz but different set points
+        const history = [
+          [
+            new RegularMatch(
+              [
+                ['Player1', 'Player2'],
+                ['Player3', 'Player4'],
+              ],
+              [3, 1] // Player1, Player2 win 3-1: +2 set points each
+            ),
+          ],
+          [
+            new RegularMatch(
+              [
+                ['Player1', 'Player3'],
+                ['Player2', 'Player4'],
+              ],
+              [3, 2] // Player1, Player3 win 3-2: +1 set points each
+            ),
+          ],
+        ]
+
+        const result = calculateRanking(participants, history)
+
+        // Player1: 2 points, Player2: 1 point, Player3: 1 point, Player4: 0 points
+        // Player2 and Player3 both have 1 point
+        // Player2: Round 1: +2, Round 2: -1 = +1 set points
+        // Player3: Round 1: -2, Round 2: +1 = -1 set points
+        // So Player2 should rank above Player3
+
+        const player2Index = result.findIndex((r) => r[0] === 'Player2')
+        const player3Index = result.findIndex((r) => r[0] === 'Player3')
+
+        expect(player2Index).to.be.below(player3Index)
+        expect(result[player2Index][1]).to.equal(1) // Same points
+        expect(result[player3Index][1]).to.equal(1) // Same points
+        expect(result[player2Index][3]).to.be.above(result[player3Index][3]) // Player2 has higher set points
       })
     })
 
@@ -240,10 +328,11 @@ describe('Ranking', function () {
 
         result.forEach((tuple) => {
           expect(tuple).to.be.an('array')
-          expect(tuple).to.have.length(3)
+          expect(tuple).to.have.length(4)
           expect(tuple[0]).to.be.a('string') // player name
           expect(tuple[1]).to.be.a('number') // points
           expect(tuple[2]).to.be.a('number') // buchholz
+          expect(tuple[3]).to.be.a('number') // setPoints
         })
       })
 
@@ -264,26 +353,26 @@ describe('Ranking', function () {
         const participants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5']
         const history = [
           [
-            {
-              teams: [
+            new RegularMatch(
+              [
                 ['Player1', 'Player2'],
                 ['Player3', 'Player4'],
               ],
-              winningTeam: 0,
-            },
+              [1, 0]
+            ),
             {
               isFreeGame: true,
               player: 'Player5',
             },
           ],
           [
-            {
-              teams: [
+            new RegularMatch(
+              [
                 ['Player1', 'Player3'],
                 ['Player2', 'Player5'],
               ],
-              winningTeam: 1,
-            },
+              [0, 1]
+            ),
             {
               isFreeGame: true,
               player: 'Player4',

@@ -69,7 +69,6 @@ export const createManagePlayersDialog = () => {
 
   document.getElementById('universe')!.appendChild(dom)
 
-  // Add event listeners for remove buttons
   dom.querySelectorAll('.remove-player-btn').forEach((element) => {
     const button = element as HTMLButtonElement
     button.addEventListener('click', (e) => {
@@ -78,7 +77,6 @@ export const createManagePlayersDialog = () => {
     })
   })
 
-  // Close dialog listener
   dom
     .querySelector('#action-close-manage-players')!
     .addEventListener('click', destroyManagePlayersDialog)
