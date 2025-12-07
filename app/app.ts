@@ -15,6 +15,7 @@ import {
   readTitle,
 } from './components/dataForm'
 import { createHeader } from './components/header'
+import { createFooter } from './components/footer'
 import { createRoundView, destroyRoundView } from './components/roundView'
 import {
   createRoundNavigation,
@@ -35,6 +36,7 @@ export const render = () => {
   document.title = title
 
   createHeader()
+  createFooter()
 
   if (tournamentHasStarted(history)) {
     const participants = load('participants') || []

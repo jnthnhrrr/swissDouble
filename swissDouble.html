@@ -373,6 +373,21 @@ h2 {
   /* This is for the positioning of the dropdown */
   position: absolute;
 }
+#footer {
+  text-align: center;
+  padding: 24px 12px;
+  margin-top: 24px;
+  color: var(--color-light);
+  font-size: var(--font-size);
+}
+
+#footer a {
+  color: var(--color-light);
+}
+
+#footer a:hover {
+  color: var(--color-black);
+}
 #data-form {
   --line-height: 1.2;
 }
@@ -1056,6 +1071,26 @@ h2 {
     document.getElementById("import-tournament-file-input").addEventListener("change", importTournament);
   };
 
+  // app/components/footer.ts
+  var createFooter = () => {
+    const dom = htmlElement(
+      "footer",
+      `
+    <footer id="footer">
+      Version <strong>1.0.0</strong>
+      <br>Dieses Programm ist Open Source und kann kostenlos verwendet werden.
+      <br><a href="https://github.com/jnthnhrrr/swissDouble/" target="_blank" rel="noopener noreferrer">Quellcode</a> | <a href="https://github.com/jnthnhrrr/swissDouble/blob/master/SPEZIFIKATIONEN.md" target="_blank" rel="noopener noreferrer">Spezifikationen</a> | <a href="https://github.com/jnthnhrrr/swissDouble/blob/master/LICENSE.md" target="_blank" rel="noopener noreferrer">Lizenz</a>
+    </footer>
+  `
+    );
+    const existingFooter = document.getElementById("footer");
+    if (existingFooter) {
+      existingFooter.replaceWith(dom);
+    } else {
+      document.getElementById("universe").appendChild(dom);
+    }
+  };
+
   // app/components/roundNavigation.ts
   var highlightRoundNavItem = (roundNumber) => {
     let items = document.getElementsByClassName("nav-round");
@@ -1536,6 +1571,7 @@ h2 {
     const title = load("title");
     document.title = title;
     createHeader();
+    createFooter();
     if (tournamentHasStarted(history)) {
       const participants2 = load("participants") || [];
       createRankingTable(participants2, history);
@@ -1659,6 +1695,7 @@ h2 {
       <div id="tournament-data" class="page border"></div>
       <div id="round-nav"></div>
       <div id="round"></div>
+      <div id="footer"></div>
     </div>
   </body>
 </html>
