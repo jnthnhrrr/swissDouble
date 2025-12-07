@@ -58,6 +58,37 @@ from a different group (more points or less points) is tracked throughout the
 tournament and taken into account for the new setting, in order to minimise the
 times a player has to play out of their group. We don't do this.
 
+# Match Results
+
+## Sets to Win (Gewinnsätze)
+
+Before starting a tournament, the number of sets required to win a match can be
+configured.
+
+1. A match is won when one team reaches exactly the configured number of sets to
+win, while the opposing team has not reached that number.
+
+2. Match results are entered by clicking buttons that display the number of sets
+won by each team. Initially, both teams show "?" (question mark), indicating
+that no result has been entered yet.
+
+3. Clicking a button increments the set count for that team. The count cycles
+from 0 to the number of sets to win, then wraps back to 0.
+
+4. A round cannot be closed until all matches have valid results. A valid result
+   requires:
+   - Both teams have entered set counts (no "?" values)
+   - Exactly one team has reached the number of sets to win
+   - The other team has not reached that number
+
+5. The following situations are invalid and prevent a round from being closed:
+   - **Tie**: Both teams have reached the number of sets to win (e.g., both have
+     3 sets when sets to win is 3)
+   - **Incomplete**: Neither team has reached the number of sets to win (e.g.,
+     2-1 when sets to win is 3)
+   - **Partial entry**: One team has a value while the other still shows "?"
+
+
 # Ranking
 
 1. Participants are ranked by their points and, as a second criterion, by their

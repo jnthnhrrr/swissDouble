@@ -63,6 +63,41 @@ Schweizer System:
    minimieren, in denen ein Spieler außerhalb seiner Gruppe spielen muss. Das
    machen wir nicht.
 
+# Spelergebnisse
+
+## Gewinnsätze
+
+Vor Turnierbeginn kann die Anzahl der Gewinnsätze konfiguriert werden.
+
+1. Ein Spiel ist gewonnen, wenn ein Team genau die konfigurierte Anzahl von
+   Gewinnsätzen erreicht hat, während das gegnerische Team diese Anzahl nicht
+   erreicht hat.
+
+2. Spelergebnisse werden eingegeben, indem auf Schaltflächen geklickt wird, die
+   die Anzahl der von jedem Team gewonnenen Sätze anzeigen. Anfangs zeigen beide
+   Teams "?" (Fragezeichen), was bedeutet, dass noch kein Ergebnis eingegeben
+   wurde.
+
+3. Durch Klicken auf eine Schaltfläche wird die Satzzahl für dieses Team erhöht.
+   Die Zählung läuft von 0 bis zur Anzahl der Gewinnsätze und springt dann wieder
+   auf 0 zurück.
+
+4. Eine Runde kann nicht geschlossen (festgeschrieben) werden, bis alle Spiele
+   gültige Ergebnisse haben. Ein gültiges Ergebnis erfordert:
+
+   - Beide Teams haben Satzzahlen eingegeben (keine "?" Werte)
+   - Genau ein Team hat die Anzahl der Gewinnsätze erreicht
+   - Das andere Team hat diese Anzahl nicht erreicht
+
+5. Die folgenden Situationen sind ungültig und verhindern das Schließen einer
+   Runde:
+   - **Unentschieden**: Beide Teams haben die Anzahl der Gewinnsätze erreicht
+     (z.B. beide haben 3 Sätze bei 3 Gewinnsätzen)
+   - **Unvollständig**: Keines der Teams hat die Anzahl der Gewinnsätze erreicht
+     (z.B. 2-1 bei 3 Gewinnsätzen)
+   - **Teileingabe**: Ein Team hat einen Wert, während das andere noch "?"
+     anzeigt
+
 # Rangliste
 
 1. Die Teilnehmer:innen werden nach ihren Spielpunkten und als zweites Kriterium

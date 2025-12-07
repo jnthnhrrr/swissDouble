@@ -1,7 +1,26 @@
 import { expect } from 'chai'
+import { JSDOM } from 'jsdom'
 import { calculatePoints, calculateRanking, calculateBuchholz } from '../../../dist/ranking.js'
+import { dump } from '../../../dist/storage.js'
 
 describe('Ranking', function () {
+  before(() => {
+    const dom = new JSDOM('', { url: 'http://localhost' })
+    global.window = dom.window
+    global.document = dom.window.document
+    global.localStorage = dom.window.localStorage
+  })
+
+  after(() => {
+    delete global.window
+    delete global.document
+    delete global.localStorage
+  })
+
+  beforeEach(() => {
+    localStorage.clear()
+    dump('setsToWin', 1)
+  })
   describe('calculatePoints', function () {
     it('works correctly with multiple rounds', function () {
       let participants = ['Achim', 'Berta', 'Clara', 'Dieter']

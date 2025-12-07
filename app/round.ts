@@ -140,8 +140,15 @@ export const calculateForbiddenPartners = (
   return forbiddenPartners
 }
 
-export const roundIsOpen = (round: Round) =>
-  round.some((match) => match.winningTeam === null)
+export const roundIsOpen = (round: Round) => {
+  return round.some((match) => {
+    if ('isFreeGame' in match) {
+      return false
+    }
+    // winningTeam is the definitive check - if it's null, the round is open
+    return match.winningTeam === null || match.winningTeam === undefined
+  })
+}
 
 export const resetNextRound = () => {
   const history = load('history') as History

@@ -39,7 +39,8 @@ describe('determineNextRound integration test', () => {
 
       firstRoundMatches.forEach((match) => {
         expect(match).to.have.property('teams')
-        expect(match).to.have.property('winningTeam', null)
+        expect(match).to.have.property('setsWon')
+        expect(match.setsWon).to.deep.equal([null, null])
         expect(match).to.not.have.property('isFreeGame')
         expect(match.teams).to.have.length(2)
         expect(match.teams[0]).to.have.length(2) // Team 1 has 2 players
@@ -53,10 +54,10 @@ describe('determineNextRound integration test', () => {
       expect(allPlayersInFirstRound).to.have.length(8)
 
       // phase 2: Simulate playing the first round
-      const completedFirstRound = firstRoundMatches.map((match) => ({
-        ...match,
-        winningTeam: 0, // Team 0 wins each match
-      }))
+      const completedFirstRound = firstRoundMatches.map((match) => {
+        match.setsWon = [1, 0] // Team 0 wins each match
+        return match
+      })
 
       const historyAfterFirstRound = [completedFirstRound]
 

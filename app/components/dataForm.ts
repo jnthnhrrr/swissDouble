@@ -1,5 +1,5 @@
 import { dump } from '../storage.js'
-import { readFromInputField, htmlElement } from '../dom.js'
+import { readFromInputField, writeToInputField, htmlElement } from '../dom.js'
 
 import { startTournament } from '../app.js'
 
@@ -15,13 +15,25 @@ export const createDataForm = () => {
           <input id="input-title" class="input" type="text" />
         </div>
 
-        <div class="right">
+        <div class="number-input-group">
           <div class="label">Runden</div>
           <input
             id="input-round-count"
-            class="input"
+            class="input input-number"
             type="number"
             value="5"
+          />
+        </div>
+
+        <div class="number-input-group">
+          <div class="label">Gewinnsätze</div>
+          <input
+            id="input-sets-to-win"
+            class="input input-number"
+            type="number"
+            min="1"
+            max="10"
+            value="1"
           />
         </div>
       </div>
@@ -157,6 +169,13 @@ export const readTitle = () => readFromInputField('input-title')
 
 export const readRoundCount = () =>
   Number(readFromInputField('input-round-count')) as number
+
+export const readSetsToWin = () =>
+  Number(readFromInputField('input-sets-to-win')) as number
+
+export const writeSetsToWin = (setsToWin: number) => {
+  writeToInputField('input-sets-to-win', String(setsToWin))
+}
 
 export const readFreeGameStrategy = (): 'bottom-ranking' | 'random' => {
   const bottomRankingRadio = document.getElementById(

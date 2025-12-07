@@ -1,4 +1,5 @@
-import type { Team, Ranking, RegularMatch } from './types.js'
+import type { Team, Ranking } from './types.js'
+import { RegularMatch } from './types.js'
 import { sortTeamsByRanking } from './ranking.js'
 
 export type PairingStrategy = 'power-pairing' | 'random'
@@ -23,10 +24,9 @@ const pairTeamsByPower = (teams: Team[], ranking: Ranking): RegularMatch[] => {
   teams = sortTeamsByRanking(teams, ranking)
   let matches: RegularMatch[] = []
   for (let i = 0; i < teams.length; i += 2) {
-    matches.push({
-      teams: [teams[i] as Team, teams[i + 1] as Team],
-      winningTeam: null,
-    })
+    matches.push(
+      new RegularMatch([teams[i] as Team, teams[i + 1] as Team], [null, null])
+    )
   }
   return matches
 }
@@ -40,10 +40,12 @@ const pairTeamsRandomly = (teams: Team[]): RegularMatch[] => {
 
   let matches: RegularMatch[] = []
   for (let i = 0; i < shuffled.length; i += 2) {
-    matches.push({
-      teams: [shuffled[i] as Team, shuffled[i + 1] as Team],
-      winningTeam: null,
-    })
+    matches.push(
+      new RegularMatch(
+        [shuffled[i] as Team, shuffled[i + 1] as Team],
+        [null, null]
+      )
+    )
   }
   return matches
 }

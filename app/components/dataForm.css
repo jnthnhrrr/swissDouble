@@ -17,6 +17,16 @@
   font-weight: bold;
 }
 
+#data-form .number-input-group {
+  margin-left: 16px;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+#data-form .input-number {
+  width: 80px;
+}
+
 #data-form #input-participants {
   width: 100%;
 }

@@ -25,8 +25,10 @@ export const calculatePoints = (
         ranking[match.player] += 1
         continue
       }
-      // match.winningTeam is a number: above we checked the round is not open
-      for (const winningPlayer of match.teams[match.winningTeam as number]) {
+      // If round is not open, winningTeam must be 0 or 1 (never null)
+      // This is guaranteed by roundIsOpen logic
+      const winningTeam = match.winningTeam as 0 | 1
+      for (const winningPlayer of match.teams[winningTeam]) {
         ranking[winningPlayer] += 1
       }
     }

@@ -1,7 +1,27 @@
 import { expect } from 'chai'
+import { JSDOM } from 'jsdom'
 import { calculatePoints } from '../../../dist/ranking.js'
+import { RegularMatch } from '../../../dist/types.js'
+import { dump } from '../../../dist/storage.js'
 
 describe('calculatePoints', () => {
+  before(() => {
+    const dom = new JSDOM('', { url: 'http://localhost' })
+    global.window = dom.window
+    global.document = dom.window.document
+    global.localStorage = dom.window.localStorage
+  })
+
+  after(() => {
+    delete global.window
+    delete global.document
+    delete global.localStorage
+  })
+
+  beforeEach(() => {
+    localStorage.clear()
+    dump('setsToWin', 1)
+  })
   describe('when history is empty', () => {
     it('returns zero points for all participants', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4']
@@ -23,13 +43,13 @@ describe('calculatePoints', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4']
       const history = [
         [
-          {
-            teams: [
+          new RegularMatch(
+            [
               ['Player1', 'Player2'],
               ['Player3', 'Player4'],
             ],
-            winningTeam: null,
-          },
+            [null, null]
+          ),
         ],
       ]
 
@@ -49,13 +69,13 @@ describe('calculatePoints', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4']
       const history = [
         [
-          {
-            teams: [
+          new RegularMatch(
+            [
               ['Player1', 'Player2'],
               ['Player3', 'Player4'],
             ],
-            winningTeam: 0,
-          },
+            [1, 0]
+          ),
         ],
       ]
 
@@ -71,13 +91,13 @@ describe('calculatePoints', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4']
       const history = [
         [
-          {
-            teams: [
+          new RegularMatch(
+            [
               ['Player1', 'Player2'],
               ['Player3', 'Player4'],
             ],
-            winningTeam: 1,
-          },
+            [0, 1]
+          ),
         ],
       ]
 
@@ -93,22 +113,22 @@ describe('calculatePoints', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4']
       const history = [
         [
-          {
-            teams: [
+          new RegularMatch(
+            [
               ['Player1', 'Player2'],
               ['Player3', 'Player4'],
             ],
-            winningTeam: 0,
-          },
+            [1, 0]
+          ),
         ],
         [
-          {
-            teams: [
+          new RegularMatch(
+            [
               ['Player1', 'Player3'],
               ['Player2', 'Player4'],
             ],
-            winningTeam: 1,
-          },
+            [0, 1]
+          ),
         ],
       ]
 
@@ -126,13 +146,13 @@ describe('calculatePoints', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5']
       const history = [
         [
-          {
-            teams: [
+          new RegularMatch(
+            [
               ['Player1', 'Player2'],
               ['Player3', 'Player4'],
             ],
-            winningTeam: 0,
-          },
+            [1, 0]
+          ),
           {
             isFreeGame: true,
             player: 'Player5',
@@ -181,26 +201,26 @@ describe('calculatePoints', () => {
       const participants = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5']
       const history = [
         [
-          {
-            teams: [
+          new RegularMatch(
+            [
               ['Player1', 'Player2'],
               ['Player3', 'Player4'],
             ],
-            winningTeam: 0,
-          },
+            [1, 0]
+          ),
           {
             isFreeGame: true,
             player: 'Player5',
           },
         ],
         [
-          {
-            teams: [
+          new RegularMatch(
+            [
               ['Player1', 'Player3'],
               ['Player2', 'Player5'],
             ],
-            winningTeam: 1,
-          },
+            [0, 1]
+          ),
           {
             isFreeGame: true,
             player: 'Player4',

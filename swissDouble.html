@@ -153,6 +153,11 @@ h2 {
   background: var(--color-ok);
 }
 
+#round-view .match.tie,
+#round-view .match.invalid {
+  background: var(--color-alert-transparent);
+}
+
 #round-view.fixed-round .match,
 #round-view.fixed-round .match .result .btn-result {
   background: var(--color-subtle) !important;
@@ -422,6 +427,16 @@ h2 {
   font-weight: bold;
 }
 
+#data-form .number-input-group {
+  margin-left: 16px;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+#data-form .input-number {
+  width: 80px;
+}
+
 #data-form #input-participants {
   width: 100%;
 }
@@ -518,6 +533,39 @@ h2 {
 </style>
     <script>"use strict";
 (() => {
+  // app/types.ts
+  var RegularMatch = class _RegularMatch {
+    constructor(teams, setsWon = [null, null]) {
+      this.teams = teams;
+      this.setsWon = setsWon;
+    }
+    get winningTeam() {
+      if (this.setsWon[0] === null || this.setsWon[1] === null) {
+        return null;
+      }
+      const setsToWin = load("setsToWin", 1);
+      if (this.setsWon[0] === setsToWin && this.setsWon[1] !== setsToWin) return 0;
+      if (this.setsWon[1] === setsToWin && this.setsWon[0] !== setsToWin) return 1;
+      return null;
+    }
+    static fromPlainObject(obj) {
+      if (obj.setsWon !== void 0) {
+        return new _RegularMatch(obj.teams, obj.setsWon);
+      } else if (obj.winningTeam !== void 0 && obj.winningTeam !== null) {
+        const setsWon = obj.winningTeam === 0 ? [1, 0] : [0, 1];
+        return new _RegularMatch(obj.teams, setsWon);
+      } else {
+        return new _RegularMatch(obj.teams, [null, null]);
+      }
+    }
+    toJSON() {
+      return {
+        teams: this.teams,
+        setsWon: this.setsWon
+      };
+    }
+  };
+
   // app/storage.ts
   var STORAGE_KEYS = [
     "history",
@@ -528,7 +576,8 @@ h2 {
     "savedTournaments",
     "correctingRound",
     "freeGameStrategy",
-    "pairingStrategy"
+    "pairingStrategy",
+    "setsToWin"
   ];
   var ROOT = "swiss-double";
   var getStoreValue = () => {
@@ -549,6 +598,28 @@ h2 {
     let store = getStoreValue();
     delete store[key];
     setStoreValue(store);
+  };
+  var migrateHistory = (history) => {
+    if (!history || !Array.isArray(history)) return history;
+    return history.map(
+      (round) => round.map((match) => {
+        if ("isFreeGame" in match) {
+          return match;
+        }
+        if (match instanceof RegularMatch) {
+          return match;
+        }
+        return RegularMatch.fromPlainObject(match);
+      })
+    );
+  };
+  var ensureSetsToWin = () => {
+    const setsToWin = load("setsToWin");
+    if (setsToWin === void 0 || setsToWin === null) {
+      dump("setsToWin", 1);
+      return 1;
+    }
+    return setsToWin;
   };
 
   // app/utils.ts
@@ -628,10 +699,9 @@ h2 {
     teams = sortTeamsByRanking(teams, ranking);
     let matches = [];
     for (let i = 0; i < teams.length; i += 2) {
-      matches.push({
-        teams: [teams[i], teams[i + 1]],
-        winningTeam: null
-      });
+      matches.push(
+        new RegularMatch([teams[i], teams[i + 1]], [null, null])
+      );
     }
     return matches;
   };
@@ -643,10 +713,12 @@ h2 {
     }
     let matches = [];
     for (let i = 0; i < shuffled.length; i += 2) {
-      matches.push({
-        teams: [shuffled[i], shuffled[i + 1]],
-        winningTeam: null
-      });
+      matches.push(
+        new RegularMatch(
+          [shuffled[i], shuffled[i + 1]],
+          [null, null]
+        )
+      );
     }
     return matches;
   };
@@ -770,7 +842,14 @@ h2 {
     }
     return forbiddenPartners;
   };
-  var roundIsOpen = (round) => round.some((match) => match.winningTeam === null);
+  var roundIsOpen = (round) => {
+    return round.some((match) => {
+      if ("isFreeGame" in match) {
+        return false;
+      }
+      return match.winningTeam === null || match.winningTeam === void 0;
+    });
+  };
   var resetNextRound = () => {
     const history = load("history");
     const roundCount = load("roundCount");
@@ -799,7 +878,8 @@ h2 {
           ranking[match.player] += 1;
           continue;
         }
-        for (const winningPlayer of match.teams[match.winningTeam]) {
+        const winningTeam = match.winningTeam;
+        for (const winningPlayer of match.teams[winningTeam]) {
           ranking[winningPlayer] += 1;
         }
       }
@@ -1008,13 +1088,25 @@ h2 {
           <input id="input-title" class="input" type="text" />
         </div>
 
-        <div class="right">
+        <div class="number-input-group">
           <div class="label">Runden</div>
           <input
             id="input-round-count"
-            class="input"
+            class="input input-number"
             type="number"
             value="5"
+          />
+        </div>
+
+        <div class="number-input-group">
+          <div class="label">Gewinns\xE4tze</div>
+          <input
+            id="input-sets-to-win"
+            class="input input-number"
+            type="number"
+            min="1"
+            max="10"
+            value="1"
           />
         </div>
       </div>
@@ -1129,6 +1221,10 @@ h2 {
   var readParticipants = () => readFromInputField("input-participants").split("\n").filter((line) => line.trim());
   var readTitle = () => readFromInputField("input-title");
   var readRoundCount = () => Number(readFromInputField("input-round-count"));
+  var readSetsToWin = () => Number(readFromInputField("input-sets-to-win"));
+  var writeSetsToWin = (setsToWin) => {
+    writeToInputField("input-sets-to-win", String(setsToWin));
+  };
   var readFreeGameStrategy = () => {
     const bottomRankingRadio = document.getElementById(
       "radio-bottom-ranking"
@@ -1443,36 +1539,88 @@ h2 {
   );
   var resultDom = (match, editable) => {
     const dom = htmlElement("div", `<div class="result"></div>`);
+    const setsToWin = load("setsToWin", 1);
+    const displayValue = (value) => {
+      return value === null ? "?" : String(value);
+    };
     const teamOneResultDom = htmlElement(
       "button",
       `
-    <button class="btn btn-result">${match.winningTeam == 0 ? 1 : match.winningTeam === null ? "?" : 0}</button>
+    <button class="btn btn-result">${displayValue(match.setsWon[0])}</button>
   `
     );
     const teamTwoResultDom = htmlElement(
       "button",
       `
-    <button class="btn btn-result second">${match.winningTeam == 1 ? 1 : match.winningTeam === null ? "?" : 0}</button>
+    <button class="btn btn-result second">${displayValue(
+        match.setsWon[1]
+      )}</button>
   `
     );
+    let matchElement = null;
+    const updateVisualFeedback = () => {
+      const team0Value = parseButtonValue(teamOneResultDom.innerHTML);
+      const team1Value = parseButtonValue(teamTwoResultDom.innerHTML);
+      teamOneResultDom.classList.remove("set");
+      teamTwoResultDom.classList.remove("set");
+      if (matchElement) {
+        matchElement.classList.remove("tie");
+        matchElement.classList.remove("invalid");
+      }
+      if (team0Value === setsToWin && team1Value !== setsToWin && team1Value !== null) {
+        teamOneResultDom.classList.add("set");
+      } else if (team1Value === setsToWin && team0Value !== setsToWin && team0Value !== null) {
+        teamTwoResultDom.classList.add("set");
+      } else if (team0Value !== null && team1Value !== null && team0Value === setsToWin && team1Value === setsToWin) {
+        if (matchElement) {
+          matchElement.classList.add("tie");
+        }
+      } else if (team0Value !== null && team1Value === null || team0Value === null && team1Value !== null || team0Value !== null && team1Value !== null && team0Value !== setsToWin && team1Value !== setsToWin) {
+        if (matchElement) {
+          matchElement.classList.add("invalid");
+        }
+      }
+    };
+    const setMatchElement = (element) => {
+      matchElement = element;
+      updateVisualFeedback();
+    };
     if (editable) {
       teamOneResultDom.addEventListener("click", () => {
-        setWinner(teamOneResultDom, teamTwoResultDom);
+        incrementSets(teamOneResultDom, setsToWin);
+        updateVisualFeedback();
       });
       teamTwoResultDom.addEventListener("click", () => {
-        setWinner(teamTwoResultDom, teamOneResultDom);
+        incrementSets(teamTwoResultDom, setsToWin);
+        updateVisualFeedback();
       });
     }
+    updateVisualFeedback();
     dom.appendChild(teamOneResultDom);
     dom.appendChild(htmlElement("span", `<span class="conjunctor">:</span>`));
     dom.appendChild(teamTwoResultDom);
-    return dom;
+    return {
+      dom,
+      setMatchElement,
+      updateVisualFeedback
+    };
   };
-  var setWinner = (thisDom, thatDom) => {
-    thisDom.innerHTML = "1";
-    thatDom.innerHTML = "0";
-    thisDom.classList.add("set");
-    thatDom.classList.add("set");
+  var parseButtonValue = (value) => {
+    if (value === "?") return null;
+    const num = Number(value);
+    return isNaN(num) ? null : num;
+  };
+  var incrementSets = (buttonDom, setsToWin) => {
+    const currentValue = parseButtonValue(buttonDom.innerHTML);
+    let nextValue;
+    if (currentValue === null) {
+      nextValue = 0;
+    } else if (currentValue === setsToWin) {
+      nextValue = 0;
+    } else {
+      nextValue = currentValue + 1;
+    }
+    buttonDom.innerHTML = nextValue === null ? "?" : String(nextValue);
   };
   var regularMatchDom = (match, editable, points) => {
     const teamOne = htmlElement(
@@ -1496,21 +1644,32 @@ h2 {
     const result = resultDom(match, editable);
     const dom = htmlElement("div", `<div class="match"></div>`);
     dom.appendChild(teamOne);
-    dom.appendChild(result);
+    dom.appendChild(result.dom);
     dom.appendChild(teamTwo);
+    result.setMatchElement(dom);
+    const setsToWin = load("setsToWin", 1);
+    if (match.setsWon[0] !== null && match.setsWon[1] !== null && match.setsWon[0] === setsToWin && match.setsWon[1] === setsToWin) {
+      dom.classList.add("tie");
+    } else if (match.setsWon[0] !== null && match.setsWon[1] === null || match.setsWon[0] === null && match.setsWon[1] !== null || match.setsWon[0] !== null && match.setsWon[1] !== null && match.setsWon[0] !== setsToWin && match.setsWon[1] !== setsToWin) {
+      dom.classList.add("invalid");
+    }
     return dom;
   };
   var createRoundView = (focusedRound) => {
     destroyRoundView();
-    const history = load("history");
+    let history = load("history");
     if (!isTruthy(history)) return;
+    history = migrateHistory(history);
     const participants = load("participants");
     const roundCount = load("roundCount");
     const currentRound = calculateCurrentRound();
     const tournamentIsOver = tournamentHasFinished(history, roundCount);
     const tournamentIsNotOverYet = !tournamentIsOver;
-    const historyBeforeFocusedRound = history.slice(0, focusedRound - 1);
-    const points = calculatePoints(participants, historyBeforeFocusedRound);
+    const focusedRoundIndex = focusedRound - 1;
+    const focusedRoundData = history[focusedRoundIndex];
+    const isFocusedRoundClosed = focusedRoundData && !roundIsOpen(focusedRoundData);
+    const historyForPoints = isFocusedRoundClosed ? history.slice(0, focusedRound) : history.slice(0, focusedRoundIndex);
+    const points = calculatePoints(participants, historyForPoints);
     const dom = htmlElement(
       "div",
       `<div id="round-view" class="page border"></div>`
@@ -1579,21 +1738,75 @@ h2 {
     const history = load("history");
     const roundCount = load("roundCount");
     const correctingThisRound = load("correctingRound") != void 0;
-    const participants = load("participants");
+    const setsToWin = load("setsToWin", 1);
     const round = history[roundNumber - 1];
-    let index = 0;
-    for (const result of document.querySelectorAll(
-      ".match .result .btn-result.second"
-    )) {
-      if (result.innerHTML == "?") {
+    const resultButtons = document.querySelectorAll(
+      "#round-view .match:not(.freegame) .result .btn-result"
+    );
+    let buttonIndex = 0;
+    for (let matchIndex = 0; matchIndex < round.length; matchIndex++) {
+      const match = round[matchIndex];
+      if ("isFreeGame" in match) {
+        continue;
+      }
+      const team0Button = resultButtons[buttonIndex];
+      const team1Button = resultButtons[buttonIndex + 1];
+      if (!team0Button || !team1Button) {
         createAlert(`
-        Die Runde kann noch nicht festgeschrieben werden,
-        weil noch Ergebnisse fehlen.
+        Fehler beim Lesen der Ergebnisse.
       `);
         return;
       }
-      result.innerHTML == "1" ? round[index].winningTeam = 1 : round[index].winningTeam = 0;
-      index++;
+      const team0Value = parseButtonValue(team0Button.innerHTML);
+      const team1Value = parseButtonValue(team1Button.innerHTML);
+      const team0HasWin = team0Value === setsToWin && team1Value !== setsToWin && team1Value !== null;
+      const team1HasWin = team1Value === setsToWin && team0Value !== setsToWin && team0Value !== null;
+      const isTie = team0Value !== null && team1Value !== null && team0Value === setsToWin && team1Value === setsToWin;
+      const isPartialEntry = team0Value !== null && team1Value === null || team0Value === null && team1Value !== null;
+      const isInvalid = team0Value !== null && team1Value !== null && team0Value !== setsToWin && team1Value !== setsToWin;
+      if (isTie) {
+        createAlert(`
+        Die Runde kann noch nicht festgeschrieben werden,
+        weil ein Unentschieden nicht erlaubt ist. Ein Team muss genau ${setsToWin} S\xE4tze gewinnen.
+      `);
+        return;
+      }
+      if (isPartialEntry) {
+        createAlert(`
+        Die Runde kann noch nicht festgeschrieben werden,
+        weil noch Ergebnisse fehlen. Ein Team muss genau ${setsToWin} S\xE4tze gewinnen.
+      `);
+        return;
+      }
+      if (isInvalid) {
+        createAlert(`
+        Die Runde kann noch nicht festgeschrieben werden,
+        weil noch Ergebnisse fehlen. Ein Team muss genau ${setsToWin} S\xE4tze gewinnen.
+      `);
+        return;
+      }
+      if (!team0HasWin && !team1HasWin) {
+        createAlert(`
+        Die Runde kann noch nicht festgeschrieben werden,
+        weil noch Ergebnisse fehlen. Ein Team muss genau ${setsToWin} S\xE4tze gewinnen.
+      `);
+        return;
+      }
+      const regularMatch = match;
+      if (team0Value === null || team1Value === null) {
+        createAlert(`
+        Fehler: Unerwarteter Zustand beim Speichern der Ergebnisse.
+      `);
+        return;
+      }
+      regularMatch.setsWon = [team0Value, team1Value];
+      if (regularMatch.winningTeam === null) {
+        createAlert(`
+        Fehler beim Speichern der Ergebnisse. Bitte versuchen Sie es erneut.
+      `);
+        return;
+      }
+      buttonIndex += 2;
     }
     history[roundNumber - 1] = round;
     dump("history", history);
@@ -1814,7 +2027,9 @@ h2 {
     destroyRoundNavigation();
     destroyRoundView();
     const participants = load("participants", []);
-    const history = load("history", []);
+    let history = load("history", []);
+    history = migrateHistory(history);
+    ensureSetsToWin();
     const roundCount = load("roundCount");
     const title = load("title");
     document.title = title;
@@ -1839,6 +2054,8 @@ h2 {
     writeFreeGameStrategy(freeGameStrategy);
     const pairingStrategy = load("pairingStrategy", DEFAULT_PAIRING_STRATEGY);
     writePairingStrategy(pairingStrategy);
+    const setsToWin = load("setsToWin", 1);
+    writeSetsToWin(setsToWin);
   };
   var startTournament = () => {
     const history = load("history") || [];
@@ -1858,11 +2075,13 @@ h2 {
     const roundCount = readRoundCount();
     const freeGameStrategy = readFreeGameStrategy();
     const pairingStrategy = readPairingStrategy();
+    const setsToWin = readSetsToWin();
     dump("participants", participants);
     dump("roundCount", roundCount);
     dump("title", readTitle());
     dump("freeGameStrategy", freeGameStrategy);
     dump("pairingStrategy", pairingStrategy);
+    dump("setsToWin", setsToWin);
     dump("history", history);
     setNextRound(history, roundCount);
     render();
@@ -1885,7 +2104,8 @@ h2 {
       roundCount: load("roundCount"),
       departedPlayers: load("departedPlayers"),
       freeGameStrategy: load("freeGameStrategy", DEFAULT_FREE_GAME_STRATEGY),
-      pairingStrategy: load("pairingStrategy", DEFAULT_PAIRING_STRATEGY)
+      pairingStrategy: load("pairingStrategy", DEFAULT_PAIRING_STRATEGY),
+      setsToWin: load("setsToWin", 1)
     };
     let storeValue = load("savedTournaments") || {};
     storeValue[title] = tournament;
@@ -1897,8 +2117,12 @@ h2 {
     const tournament = {
       ...savedTournaments[title],
       freeGameStrategy: savedTournaments[title].freeGameStrategy || DEFAULT_FREE_GAME_STRATEGY,
-      pairingStrategy: savedTournaments[title].pairingStrategy || DEFAULT_PAIRING_STRATEGY
+      pairingStrategy: savedTournaments[title].pairingStrategy || DEFAULT_PAIRING_STRATEGY,
+      setsToWin: savedTournaments[title].setsToWin || 1
     };
+    if (tournament.history) {
+      tournament.history = migrateHistory(tournament.history);
+    }
     for (const key of Object.keys(tournament)) {
       dump(key, tournament[key]);
     }
@@ -1955,6 +2179,24 @@ h2 {
       }
       if (!data.pairingStrategy) {
         data.pairingStrategy = DEFAULT_PAIRING_STRATEGY;
+      }
+      if (!data.setsToWin) {
+        data.setsToWin = 1;
+      }
+      if (data.history) {
+        data.history = migrateHistory(data.history);
+      }
+      if (data.savedTournaments) {
+        for (const title in data.savedTournaments) {
+          if (data.savedTournaments[title].history) {
+            data.savedTournaments[title].history = migrateHistory(
+              data.savedTournaments[title].history
+            );
+          }
+          if (!data.savedTournaments[title].setsToWin) {
+            data.savedTournaments[title].setsToWin = 1;
+          }
+        }
       }
       for (const key of Object.keys(data)) {
         const value = data[key];

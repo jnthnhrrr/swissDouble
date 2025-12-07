@@ -1,5 +1,13 @@
 import { Tournament, TournamentTitle } from './types.js'
-import { load, dump, erase, StorageKey, STORAGE_KEYS } from './storage.js'
+import {
+  load,
+  dump,
+  erase,
+  StorageKey,
+  STORAGE_KEYS,
+  migrateHistory,
+  ensureSetsToWin,
+} from './storage.js'
 import { isTruthy, findDuplicates } from './utils.js'
 import { writeToInputField } from './dom.js'
 import { DEFAULT_FREE_GAME_STRATEGY } from './freeGamers.js'
@@ -19,6 +27,8 @@ import {
   writeFreeGameStrategy,
   readPairingStrategy,
   writePairingStrategy,
+  readSetsToWin,
+  writeSetsToWin,
 } from './components/dataForm.js'
 import { createHeader } from './components/header.js'
 import { createFooter } from './components/footer.js'
@@ -38,7 +48,9 @@ export const render = () => {
   destroyRoundView()
 
   const participants = load('participants', [])
-  const history = load('history', [])
+  let history = load('history', [])
+  history = migrateHistory(history)
+  ensureSetsToWin()
   const roundCount = load('roundCount')
   const title = load('title')
   document.title = title
@@ -74,6 +86,8 @@ export const render = () => {
     | 'power-pairing'
     | 'random'
   writePairingStrategy(pairingStrategy)
+  const setsToWin = load('setsToWin', 1) as number
+  writeSetsToWin(setsToWin)
 }
 
 export const startTournament = () => {
@@ -97,11 +111,13 @@ export const startTournament = () => {
   const roundCount = readRoundCount()
   const freeGameStrategy = readFreeGameStrategy()
   const pairingStrategy = readPairingStrategy()
+  const setsToWin = readSetsToWin()
   dump('participants', participants)
   dump('roundCount', roundCount)
   dump('title', readTitle())
   dump('freeGameStrategy', freeGameStrategy)
   dump('pairingStrategy', pairingStrategy)
+  dump('setsToWin', setsToWin)
   dump('history', history)
 
   setNextRound(history, roundCount)
@@ -129,6 +145,7 @@ export const storeTournament = () => {
     departedPlayers: load('departedPlayers'),
     freeGameStrategy: load('freeGameStrategy', DEFAULT_FREE_GAME_STRATEGY),
     pairingStrategy: load('pairingStrategy', DEFAULT_PAIRING_STRATEGY),
+    setsToWin: load('setsToWin', 1),
   }
   let storeValue = load('savedTournaments') || {}
   storeValue[title] = tournament
@@ -145,6 +162,10 @@ export const openTournament = (title: TournamentTitle) => {
       savedTournaments[title].freeGameStrategy || DEFAULT_FREE_GAME_STRATEGY,
     pairingStrategy:
       savedTournaments[title].pairingStrategy || DEFAULT_PAIRING_STRATEGY,
+    setsToWin: savedTournaments[title].setsToWin || 1,
+  }
+  if (tournament.history) {
+    tournament.history = migrateHistory(tournament.history)
   }
   for (const key of Object.keys(tournament) as (keyof Tournament)[]) {
     dump(key, tournament[key])
@@ -214,6 +235,25 @@ export const importTournament = (event: Event) => {
     }
     if (!data.pairingStrategy) {
       data.pairingStrategy = DEFAULT_PAIRING_STRATEGY
+    }
+    if (!data.setsToWin) {
+      data.setsToWin = 1
+    }
+
+    if (data.history) {
+      data.history = migrateHistory(data.history)
+    }
+    if (data.savedTournaments) {
+      for (const title in data.savedTournaments) {
+        if (data.savedTournaments[title].history) {
+          data.savedTournaments[title].history = migrateHistory(
+            data.savedTournaments[title].history
+          )
+        }
+        if (!data.savedTournaments[title].setsToWin) {
+          data.savedTournaments[title].setsToWin = 1
+        }
+      }
     }
 
     for (const key of Object.keys(data) as StorageKey[]) {

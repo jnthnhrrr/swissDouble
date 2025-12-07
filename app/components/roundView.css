@@ -36,6 +36,11 @@
   background: var(--color-ok);
 }
 
+#round-view .match.tie,
+#round-view .match.invalid {
+  background: var(--color-alert-transparent);
+}
+
 #round-view.fixed-round .match,
 #round-view.fixed-round .match .result .btn-result {
   background: var(--color-subtle) !important;

@@ -3,7 +3,10 @@ import type {
   TournamentTitle,
   FreeGameStrategy,
   PairingStrategy,
+  History,
+  Match,
 } from './types.js'
+import { RegularMatch } from './types.js'
 
 export interface StorageSchema extends Tournament {
   correctingRound: number
@@ -23,6 +26,7 @@ export const STORAGE_KEYS: StorageKey[] = [
   'correctingRound',
   'freeGameStrategy',
   'pairingStrategy',
+  'setsToWin',
 ]
 
 interface Loading {
@@ -59,4 +63,29 @@ export const erase = (key: StorageKey) => {
   let store = getStoreValue()
   delete store[key]
   setStoreValue(store)
+}
+
+export const migrateHistory = (history: History): History => {
+  if (!history || !Array.isArray(history)) return history
+
+  return history.map((round) =>
+    round.map((match) => {
+      if ('isFreeGame' in match) {
+        return match
+      }
+      if (match instanceof RegularMatch) {
+        return match
+      }
+      return RegularMatch.fromPlainObject(match as any)
+    })
+  )
+}
+
+export const ensureSetsToWin = (): number => {
+  const setsToWin = load('setsToWin')
+  if (setsToWin === undefined || setsToWin === null) {
+    dump('setsToWin', 1)
+    return 1
+  }
+  return setsToWin as number
 }
