@@ -1845,14 +1845,25 @@ h2 {
       updateVisualFeedback();
     };
     if (editable) {
-      teamOneResultDom.addEventListener("click", () => {
-        incrementSets(teamOneResultDom, setsToWin);
-        updateVisualFeedback();
-      });
-      teamTwoResultDom.addEventListener("click", () => {
-        incrementSets(teamTwoResultDom, setsToWin);
-        updateVisualFeedback();
-      });
+      if (setsToWin === 1) {
+        teamOneResultDom.addEventListener("click", () => {
+          flipSets(teamOneResultDom, teamTwoResultDom);
+          updateVisualFeedback();
+        });
+        teamTwoResultDom.addEventListener("click", () => {
+          flipSets(teamTwoResultDom, teamOneResultDom);
+          updateVisualFeedback();
+        });
+      } else {
+        teamOneResultDom.addEventListener("click", () => {
+          incrementSets(teamOneResultDom, setsToWin);
+          updateVisualFeedback();
+        });
+        teamTwoResultDom.addEventListener("click", () => {
+          incrementSets(teamTwoResultDom, setsToWin);
+          updateVisualFeedback();
+        });
+      }
     }
     updateVisualFeedback();
     dom.appendChild(teamOneResultDom);
@@ -1880,6 +1891,16 @@ h2 {
       nextValue = currentValue + 1;
     }
     buttonDom.innerHTML = nextValue === null ? "?" : String(nextValue);
+  };
+  var flipSets = (clickedButton, opposingButton) => {
+    const clickedValue = parseButtonValue(clickedButton.innerHTML);
+    if (clickedValue === null || clickedValue === 0) {
+      clickedButton.innerHTML = "1";
+      opposingButton.innerHTML = "0";
+    } else if (clickedValue === 1) {
+      clickedButton.innerHTML = "0";
+      opposingButton.innerHTML = "1";
+    }
   };
   var regularMatchDom = (match, editable, points) => {
     const teamOne = htmlElement(
@@ -2101,7 +2122,11 @@ h2 {
     }
     const playerRows = activePlayers.map((player) => {
       const rankingOrder = getRankingOrder();
-      const ranking = calculateRanking(participants, load("history") || [], rankingOrder);
+      const ranking = calculateRanking(
+        participants,
+        load("history") || [],
+        rankingOrder
+      );
       const playerRanking = ranking.find(([name]) => name === player);
       const points = playerRanking ? playerRanking[1] : 0;
       return `
@@ -2236,9 +2261,7 @@ h2 {
       "<th>Name</th>",
       ...rankingOrder.map((param) => `<th>${getParameterLabel2(param)}</th>`)
     ];
-    rows.push(
-      htmlElement("tr", `<tr>${headerCells.join("")}</tr>`)
-    );
+    rows.push(htmlElement("tr", `<tr>${headerCells.join("")}</tr>`));
     let rank = 1;
     let dark = true;
     for (const group of rankingGroups) {

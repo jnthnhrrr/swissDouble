@@ -110,14 +110,25 @@ const resultDom = (match: RegularMatch, editable: boolean) => {
   }
 
   if (editable) {
-    teamOneResultDom.addEventListener('click', () => {
-      incrementSets(teamOneResultDom, setsToWin)
-      updateVisualFeedback()
-    })
-    teamTwoResultDom.addEventListener('click', () => {
-      incrementSets(teamTwoResultDom, setsToWin)
-      updateVisualFeedback()
-    })
+    if (setsToWin === 1) {
+      teamOneResultDom.addEventListener('click', () => {
+        flipSets(teamOneResultDom, teamTwoResultDom)
+        updateVisualFeedback()
+      })
+      teamTwoResultDom.addEventListener('click', () => {
+        flipSets(teamTwoResultDom, teamOneResultDom)
+        updateVisualFeedback()
+      })
+    } else {
+      teamOneResultDom.addEventListener('click', () => {
+        incrementSets(teamOneResultDom, setsToWin)
+        updateVisualFeedback()
+      })
+      teamTwoResultDom.addEventListener('click', () => {
+        incrementSets(teamTwoResultDom, setsToWin)
+        updateVisualFeedback()
+      })
+    }
   }
 
   updateVisualFeedback()
@@ -152,6 +163,18 @@ const incrementSets = (buttonDom: HTMLElement, setsToWin: number) => {
   }
 
   buttonDom.innerHTML = nextValue === null ? '?' : String(nextValue)
+}
+
+const flipSets = (clickedButton: HTMLElement, opposingButton: HTMLElement) => {
+  const clickedValue = parseButtonValue(clickedButton.innerHTML)
+
+  if (clickedValue === null || clickedValue === 0) {
+    clickedButton.innerHTML = '1'
+    opposingButton.innerHTML = '0'
+  } else if (clickedValue === 1) {
+    clickedButton.innerHTML = '0'
+    opposingButton.innerHTML = '1'
+  }
 }
 
 const regularMatchDom = (
