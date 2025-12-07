@@ -13,6 +13,7 @@ type HTMLElementTagNameMap = {
   button: HTMLButtonElement
   table: HTMLTableElement
   tr: HTMLTableRowElement
+  footer: HTMLElement
 }
 
 export function htmlElement<K extends keyof HTMLElementTagNameMap>(

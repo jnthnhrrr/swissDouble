@@ -431,7 +431,8 @@ const closeRound = (roundNumber: number) => {
     const regularMatch = match as RegularMatch
     if (team0Value === null || team1Value === null) {
       createAlert(`
-        Fehler: Unerwarteter Zustand beim Speichern der Ergebnisse.
+        Die Runde kann noch nicht festgeschrieben werden,
+        weil noch Ergebnisse fehlen. Ein Team muss genau ${setsToWin} Sätze gewinnen.
       `)
       return
     }
@@ -439,7 +440,7 @@ const closeRound = (roundNumber: number) => {
 
     if (regularMatch.winningTeam === null) {
       createAlert(`
-        Fehler beim Speichern der Ergebnisse. Bitte versuchen Sie es erneut.
+        Fehler beim Festschreiben der Ergebnisse. Bitte versuche es erneut.
       `)
       return
     }
@@ -453,7 +454,9 @@ const closeRound = (roundNumber: number) => {
     erase('correctingRound')
     resetNextRound()
   }
+
   setNextRound(history, roundCount)
+
   render()
 }
 

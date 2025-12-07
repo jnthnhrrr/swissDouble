@@ -6,6 +6,7 @@ import {
   calculateCurrentRound,
   tournamentHasStarted,
   incrementRoundCount,
+  getActiveParticipants,
 } from '../tournament.js'
 import { load } from '../storage.js'
 import { render } from '../app.js'
@@ -50,18 +51,22 @@ export const createRoundNavigation = (focusedRound: number) => {
   }
 
   if (tournamentStarted) {
-    const addRoundButton = htmlElement(
-      'div',
+    const roundCount = load('roundCount') as number
+    const activeParticipants = getActiveParticipants()
+    if (roundCount < activeParticipants.length) {
+      const addRoundButton = htmlElement(
+        'div',
+        `
+        <div class="nav-round add-round-button" id="add-round-button">
+          +
+        </div>
       `
-      <div class="nav-round add-round-button" id="add-round-button">
-        +
-      </div>
-    `
-    )
-    addRoundButton.addEventListener('click', () => {
-      confirmIncrementRoundCount()
-    })
-    items.push(addRoundButton)
+      )
+      addRoundButton.addEventListener('click', () => {
+        confirmIncrementRoundCount()
+      })
+      items.push(addRoundButton)
+    }
   }
 
   destroyRoundNavigation()

@@ -19,7 +19,7 @@ export const createManagePlayersDialog = () => {
   )
 
   if (activePlayers.length === 0) {
-    createAlert('Alle Spieler haben das Turnier bereits verlassen.')
+    createAlert('Alle Spieler:innen haben das Turnier bereits verlassen.')
     return
   }
 
@@ -92,23 +92,59 @@ const destroyManagePlayersDialog = () => {
 }
 
 const confirmRemovePlayer = (player: Player, afterRound: number) => {
-  createAlert(
-    `
-    Spieler "${player}" nach Runde ${afterRound} entfernen?
+  const roundCount = load('roundCount') as number
+  const activePlayers = (load('participants') || []).filter(
+    (p: Player) => !(p in (load('departedPlayers') || {}))
+  )
+
+  const willCauseRoundCountIssue = roundCount === activePlayers.length
+
+  let message = `
+    Spieler:in "${player}" nach Runde ${afterRound} entfernen?
 
     Diese Aktion kann nicht rückgängig gemacht werden.
     Nach dieser Aktion wird die gegenwärtig offene Runde neu gesetzt.
     Stell sicher, dass die Runde noch nicht begonnen hat.
-    Entferne den Spieler erst, wenn die Runde abgeschlossen ist.
-  `,
-    () => removePlayer(player, afterRound)
-  )
+    Entferne die Spieler:in erst, wenn die Runde abgeschlossen ist.
+  `
+
+  if (willCauseRoundCountIssue) {
+    message = `
+      Spieler:in "${player}" nach Runde ${afterRound} entfernen?
+
+      WARNUNG: Das Turnier hat derzeit ${roundCount} Runden und ${
+        activePlayers.length
+      } aktive Spieler:innen.
+      Nach dem Entfernen dieser Spieler:in wird die Anzahl der Runden
+      automatisch auf ${activePlayers.length - 1} reduziert,
+      da die Anzahl der Runden die Anzahl der Teilnehmer:innen nicht
+      überschreiten darf.
+
+      Diese Aktion kann nicht rückgängig gemacht werden.
+      Nach dieser Aktion wird die gegenwärtig offene Runde neu gesetzt.
+      Stell sicher, dass die Runde noch nicht begonnen hat.
+      Entferne die Spieler:in erst, wenn die Runde abgeschlossen ist.
+    `
+  }
+
+  createAlert(message, () => removePlayer(player, afterRound))
 }
 
 const removePlayer = (player: Player, afterRound: number) => {
   const departedPlayers = load('departedPlayers') || {}
   departedPlayers[player] = afterRound
   dump('departedPlayers', departedPlayers)
+
+  const roundCount = load('roundCount') as number
+  const participants = load('participants') || []
+  const newActivePlayers = participants.filter(
+    (p: Player) => !(p in departedPlayers)
+  )
+
+  if (roundCount > newActivePlayers.length) {
+    dump('roundCount', newActivePlayers.length)
+  }
+
   destroyManagePlayersDialog()
   resetNextRound()
   render()

@@ -18,6 +18,7 @@ import { pairTeams, DEFAULT_PAIRING_STRATEGY } from './pairingStrategy.js'
 import { getActiveParticipants, calculateCurrentRound } from './tournament.js'
 import { setDiff, popRandom, drawRandom } from './utils.js'
 import { dump, load } from './storage.js'
+import { createAlert } from './components/alert.js'
 
 export const determineNextRound = (history: History): Round => {
   const activeParticipants = getActiveParticipants()
@@ -150,6 +151,22 @@ export const resetNextRound = () => {
 
 export const setNextRound = (history: History, roundCount: number) => {
   if (calculateCurrentRound() == roundCount) return
+
+  const activeParticipants = getActiveParticipants()
+  const nextRoundNumber = history.length + 1
+
+  if (nextRoundNumber > activeParticipants.length) {
+    createAlert(`
+      Warnung: Es wird versucht, Runde ${nextRoundNumber} zu erstellen,
+      aber es gibt nur ${activeParticipants.length} aktive Teilnehmer:innen.
+
+      Die Anzahl der Runden kann die Anzahl der Teilnehmer:innen nicht
+      überschreiten, da sonst keine gültigen Paarungen mehr möglich sind (weil
+      keine zwei Spieler:innen zweimal zusammen spielen sollen).
+    `)
+    return
+  }
+
   const newHistory: History = [...history, determineNextRound(history)]
   dump('history', newHistory)
 }

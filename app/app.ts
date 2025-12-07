@@ -119,6 +119,14 @@ export const startTournament = () => {
   }
 
   const roundCount = readRoundCount()
+  if (roundCount > participants.length) {
+    createAlert(`
+      Die Anzahl der Runden (${roundCount}) darf die Anzahl der Teilnehmer:innen (${participants.length}) nicht überschreiten.
+
+      Bitte reduziere die Anzahl der Runden oder füge weitere Teilnehmer:innen hinzu.
+    `)
+    return
+  }
   const freeGameStrategy = readFreeGameStrategy()
   const pairingStrategy = readPairingStrategy()
   const setsToWin = readSetsToWin()

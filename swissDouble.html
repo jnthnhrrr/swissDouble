@@ -963,6 +963,19 @@ h2 {
   };
   var setNextRound = (history, roundCount) => {
     if (calculateCurrentRound() == roundCount) return;
+    const activeParticipants = getActiveParticipants();
+    const nextRoundNumber = history.length + 1;
+    if (nextRoundNumber > activeParticipants.length) {
+      return `
+      Warnung: Es wird versucht, Runde ${nextRoundNumber} zu erstellen,
+      aber es gibt nur ${activeParticipants.length} aktive Teilnehmer:innen.
+
+      Die Anzahl der Runden kann die Anzahl der Teilnehmer:innen nicht
+      \xFCberschreiten, da sonst keine g\xFCltigen Paarungen mehr m\xF6glich sind (weil
+      keine zwei Spieler:innen zweimal zusammen spielen sollen).
+    `;
+      return;
+    }
     const newHistory = [...history, determineNextRound(history)];
     dump("history", newHistory);
   };
@@ -1698,18 +1711,22 @@ h2 {
       items.push(navItem);
     }
     if (tournamentStarted) {
-      const addRoundButton = htmlElement(
-        "div",
-        `
-      <div class="nav-round add-round-button" id="add-round-button">
-        +
-      </div>
-    `
-      );
-      addRoundButton.addEventListener("click", () => {
-        confirmIncrementRoundCount();
-      });
-      items.push(addRoundButton);
+      const roundCount = load("roundCount");
+      const activeParticipants = getActiveParticipants();
+      if (roundCount < activeParticipants.length) {
+        const addRoundButton = htmlElement(
+          "div",
+          `
+        <div class="nav-round add-round-button" id="add-round-button">
+          +
+        </div>
+      `
+        );
+        addRoundButton.addEventListener("click", () => {
+          confirmIncrementRoundCount();
+        });
+        items.push(addRoundButton);
+      }
     }
     destroyRoundNavigation();
     const dom = htmlElement("div", `<div id="round-nav"></div>`);
@@ -2075,14 +2092,15 @@ h2 {
       const regularMatch = match;
       if (team0Value === null || team1Value === null) {
         createAlert(`
-        Fehler: Unerwarteter Zustand beim Speichern der Ergebnisse.
+        Die Runde kann noch nicht festgeschrieben werden,
+        weil noch Ergebnisse fehlen. Ein Team muss genau ${setsToWin} S\xE4tze gewinnen.
       `);
         return;
       }
       regularMatch.setsWon = [team0Value, team1Value];
       if (regularMatch.winningTeam === null) {
         createAlert(`
-        Fehler beim Speichern der Ergebnisse. Bitte versuchen Sie es erneut.
+        Fehler beim Festschreiben der Ergebnisse. Bitte versuche es erneut.
       `);
         return;
       }
@@ -2094,7 +2112,10 @@ h2 {
       erase("correctingRound");
       resetNextRound();
     }
-    setNextRound(history, roundCount);
+    const errorMessage = setNextRound(history, roundCount);
+    if (typeof errorMessage === "string") {
+      createAlert(errorMessage);
+    }
     render();
   };
   var attemptReopenRound = (roundNumber) => {
@@ -2117,7 +2138,7 @@ h2 {
       (player) => !departedPlayers[player]
     );
     if (activePlayers.length === 0) {
-      createAlert("Alle Spieler haben das Turnier bereits verlassen.");
+      createAlert("Alle Spieler:innen haben das Turnier bereits verlassen.");
       return;
     }
     const playerRows = activePlayers.map((player) => {
@@ -2178,22 +2199,49 @@ h2 {
     document.getElementById("manage-players-dialog")?.remove();
   };
   var confirmRemovePlayer = (player, afterRound) => {
-    createAlert(
-      `
-    Spieler "${player}" nach Runde ${afterRound} entfernen?
+    const roundCount = load("roundCount");
+    const activePlayers = (load("participants") || []).filter(
+      (p) => !(p in (load("departedPlayers") || {}))
+    );
+    const willCauseRoundCountIssue = roundCount === activePlayers.length;
+    let message = `
+    Spieler:in "${player}" nach Runde ${afterRound} entfernen?
 
     Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden.
     Nach dieser Aktion wird die gegenw\xE4rtig offene Runde neu gesetzt.
     Stell sicher, dass die Runde noch nicht begonnen hat.
-    Entferne den Spieler erst, wenn die Runde abgeschlossen ist.
-  `,
-      () => removePlayer(player, afterRound)
-    );
+    Entferne die Spieler:in erst, wenn die Runde abgeschlossen ist.
+  `;
+    if (willCauseRoundCountIssue) {
+      message = `
+      Spieler:in "${player}" nach Runde ${afterRound} entfernen?
+
+      WARNUNG: Das Turnier hat derzeit ${roundCount} Runden und ${activePlayers.length} aktive Spieler:innen.
+      Nach dem Entfernen dieser Spieler:in wird die Anzahl der Runden
+      automatisch auf ${activePlayers.length - 1} reduziert,
+      da die Anzahl der Runden die Anzahl der Teilnehmer:innen nicht
+      \xFCberschreiten darf.
+
+      Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden.
+      Nach dieser Aktion wird die gegenw\xE4rtig offene Runde neu gesetzt.
+      Stell sicher, dass die Runde noch nicht begonnen hat.
+      Entferne die Spieler:in erst, wenn die Runde abgeschlossen ist.
+    `;
+    }
+    createAlert(message, () => removePlayer(player, afterRound));
   };
   var removePlayer = (player, afterRound) => {
     const departedPlayers = load("departedPlayers") || {};
     departedPlayers[player] = afterRound;
     dump("departedPlayers", departedPlayers);
+    const roundCount = load("roundCount");
+    const participants = load("participants") || [];
+    const newActivePlayers = participants.filter(
+      (p) => !(p in departedPlayers)
+    );
+    if (roundCount > newActivePlayers.length) {
+      dump("roundCount", newActivePlayers.length);
+    }
     destroyManagePlayersDialog();
     resetNextRound();
     render();
@@ -2386,6 +2434,14 @@ h2 {
       return;
     }
     const roundCount = readRoundCount();
+    if (roundCount > participants.length) {
+      createAlert(`
+      Die Anzahl der Runden (${roundCount}) darf die Anzahl der Teilnehmer:innen (${participants.length}) nicht \xFCberschreiten.
+
+      Bitte reduziere die Anzahl der Runden oder f\xFCge weitere Teilnehmer:innen hinzu.
+    `);
+      return;
+    }
     const freeGameStrategy = readFreeGameStrategy();
     const pairingStrategy = readPairingStrategy();
     const setsToWin = readSetsToWin();
