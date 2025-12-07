@@ -6,6 +6,8 @@ import type {
   History,
   RankingRow,
   DepartedPlayersRecord,
+  RankingOrder,
+  RankingParameter,
 } from '../types.js'
 import { load } from '../storage.js'
 import { groupBy } from '../utils.js'
@@ -15,7 +17,7 @@ import {
   tournamentHasStarted,
   tournamentHasFinished,
 } from '../tournament.js'
-import { calculateRanking } from '../ranking.js'
+import { calculateRanking, getRankingOrder } from '../ranking.js'
 import { roundIsOpen } from '../round.js'
 
 const titleDom = (title: string) =>
@@ -60,37 +62,65 @@ const managePlayersButtonDom = () => {
   return dom
 }
 
+const getParameterLabel = (param: RankingParameter): string => {
+  switch (param) {
+    case 'points':
+      return 'Punkte'
+    case 'buchholz':
+      return 'Buchholz'
+    case 'setPoints':
+      return 'Satzpunkte'
+  }
+}
+
+const getParameterValue = (
+  row: RankingRow,
+  param: RankingParameter
+): string => {
+  switch (param) {
+    case 'points':
+      return String(row[1])
+    case 'buchholz':
+      return String(row[2])
+    case 'setPoints': {
+      const value = row[3]
+      return value > 0 ? `+${value}` : value < 0 ? `${value}` : '0'
+    }
+  }
+}
+
 const tableDom = (
   rankingGroups: Ranking[],
-  departedPlayers: DepartedPlayersRecord
+  departedPlayers: DepartedPlayersRecord,
+  rankingOrder: RankingOrder
 ): HTMLTableElement => {
   const dom = htmlElement('table', `<table class="result-table"></table>`)
   const rows: HTMLTableRowElement[] = []
-  rows.push(
-    htmlElement(
-      'tr',
-      `
-      <tr>
-        <th>Platz</th>
-        <th>Name</th>
-        <th>Punkte</th>
-        <th>Buchholz</th>
-        <th>Satzpunkte</th>
-      </tr>
-    `
-    )
-  )
+
+  const headerCells = [
+    '<th>Platz</th>',
+    '<th>Name</th>',
+    ...rankingOrder.map((param) => `<th>${getParameterLabel(param)}</th>`),
+  ]
+  rows.push(htmlElement('tr', `<tr>${headerCells.join('')}</tr>`))
+
   let rank = 1
   let dark = true
   for (const group of rankingGroups) {
-    for (const [name, points, buchholz, setPoints] of group) {
+    for (const row of group) {
+      const [name] = row
       const isDeparted = departedPlayers && departedPlayers[name] !== undefined
       const departedText = isDeparted
         ? ` (nach Runde ${departedPlayers[name]})`
         : ''
 
-      const formattedSetPoints =
-        setPoints > 0 ? `+${setPoints}` : setPoints < 0 ? `${setPoints}` : '0'
+      const dataCells = [
+        `<td>${rank}</td>`,
+        `<td>${name}${departedText}</td>`,
+        ...rankingOrder.map(
+          (param) => `<td>${getParameterValue(row, param)}</td>`
+        ),
+      ]
 
       rows.push(
         htmlElement(
@@ -99,11 +129,7 @@ const tableDom = (
           <tr class="${dark ? 'dark' : 'bright'} ${
             isDeparted ? 'departed' : ''
           }">
-            <td>${rank}</td>
-            <td>${name}${departedText}</td>
-            <td>${points}</td>
-            <td>${buchholz}</td>
-            <td>${formattedSetPoints}</td>
+            ${dataCells.join('')}
           </tr>
         `
         )
@@ -135,7 +161,8 @@ export const createRankingTable = (
 ) => {
   if (!participants) return
 
-  const ranking = calculateRanking(participants, history)
+  const rankingOrder = getRankingOrder()
+  const ranking = calculateRanking(participants, history, rankingOrder)
   const groups = groupRankingByPointsAndBuchholz(ranking)
   const title = load('title')
   const roundCount = load('roundCount')
@@ -159,7 +186,7 @@ export const createRankingTable = (
     titleDom(title),
     headingDom(rankedRound, tournamentFinished),
     ...(showManageButton ? [managePlayersButtonDom()] : []),
-    tableDom(groups, departedPlayers),
+    tableDom(groups, departedPlayers, rankingOrder),
   ]
 
   dom.replaceChildren(...elements)

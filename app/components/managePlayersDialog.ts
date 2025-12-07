@@ -5,7 +5,7 @@ import { htmlElement } from '../dom.js'
 import { load, dump } from '../storage.js'
 import { resetNextRound } from '../round.js'
 import { calculateCurrentRound } from '../tournament.js'
-import { calculateRanking } from '../ranking.js'
+import { calculateRanking, getRankingOrder } from '../ranking.js'
 
 import { render } from '../app.js'
 
@@ -25,7 +25,12 @@ export const createManagePlayersDialog = () => {
 
   const playerRows = activePlayers
     .map((player: Player) => {
-      const ranking = calculateRanking(participants, load('history') || [])
+      const rankingOrder = getRankingOrder()
+      const ranking = calculateRanking(
+        participants,
+        load('history') || [],
+        rankingOrder
+      )
       const playerRanking = ranking.find(([name]) => name === player)
       const points = playerRanking ? playerRanking[1] : 0
 

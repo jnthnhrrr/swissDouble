@@ -9,7 +9,7 @@ import type {
   FreeGameStrategy,
   PairingStrategy,
 } from './types.js'
-import { calculateRanking } from './ranking.js'
+import { calculateRanking, getRankingOrder } from './ranking.js'
 import {
   calculateFreeGamers,
   DEFAULT_FREE_GAME_STRATEGY,
@@ -22,7 +22,8 @@ import { dump, load } from './storage.js'
 export const determineNextRound = (history: History): Round => {
   const activeParticipants = getActiveParticipants()
   let [teams, freeGamers] = determineTeams(activeParticipants, history)
-  let ranking = calculateRanking(activeParticipants, history)
+  const rankingOrder = getRankingOrder()
+  let ranking = calculateRanking(activeParticipants, history, rankingOrder)
   const pairingStrategy = load(
     'pairingStrategy',
     DEFAULT_PAIRING_STRATEGY

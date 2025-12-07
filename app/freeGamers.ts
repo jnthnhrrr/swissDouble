@@ -1,5 +1,5 @@
 import type { History, Ranking, Player, FreeGameStrategy } from './types.js'
-import { calculateRanking } from './ranking.js'
+import { calculateRanking, getRankingOrder } from './ranking.js'
 import { drawRandom } from './utils.js'
 
 // Default free game strategy for backwards compatibility with tournaments
@@ -58,7 +58,8 @@ export const calculateFreeGamers = (
   history: History,
   strategy: FreeGameStrategy = DEFAULT_FREE_GAME_STRATEGY
 ): Player[] => {
-  let ranking: Ranking = calculateRanking(participants, history)
+  const rankingOrder = getRankingOrder()
+  let ranking: Ranking = calculateRanking(participants, history, rankingOrder)
   const participantCount = participants.length
   const freeGamesCount = participantCount % 4
   let freeGamers: Player[] = []

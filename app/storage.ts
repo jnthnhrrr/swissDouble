@@ -27,6 +27,7 @@ export const STORAGE_KEYS: StorageKey[] = [
   'freeGameStrategy',
   'pairingStrategy',
   'setsToWin',
+  'rankingOrder',
 ]
 
 interface Loading {

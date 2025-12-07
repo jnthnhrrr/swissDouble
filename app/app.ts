@@ -1,4 +1,5 @@
-import { Tournament, TournamentTitle } from './types.js'
+import { Tournament, TournamentTitle, RankingOrder } from './types.js'
+import { getDefaultRankingOrder } from './ranking.js'
 import {
   load,
   dump,
@@ -29,6 +30,8 @@ import {
   writePairingStrategy,
   readSetsToWin,
   writeSetsToWin,
+  readRankingOrder,
+  writeRankingOrder,
 } from './components/dataForm.js'
 import { createHeader } from './components/header.js'
 import { createFooter } from './components/footer.js'
@@ -88,6 +91,13 @@ export const render = () => {
   writePairingStrategy(pairingStrategy)
   const setsToWin = load('setsToWin', 1) as number
   writeSetsToWin(setsToWin)
+  const rankingOrder = load('rankingOrder') as RankingOrder | undefined
+  if (rankingOrder && setsToWin > 1) {
+    writeRankingOrder(rankingOrder)
+  } else {
+    const defaultOrder = getDefaultRankingOrder(setsToWin)
+    writeRankingOrder(defaultOrder)
+  }
 }
 
 export const startTournament = () => {
@@ -118,6 +128,8 @@ export const startTournament = () => {
   dump('freeGameStrategy', freeGameStrategy)
   dump('pairingStrategy', pairingStrategy)
   dump('setsToWin', setsToWin)
+  const rankingOrder = readRankingOrder()
+  dump('rankingOrder', rankingOrder)
   dump('history', history)
 
   setNextRound(history, roundCount)

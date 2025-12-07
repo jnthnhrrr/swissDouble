@@ -1,11 +1,14 @@
 import type {
   History,
   Ranking,
+  RankingRow,
   Player,
   Team,
   Points,
   Buchholz,
   SetPoints,
+  RankingOrder,
+  RankingParameter,
 } from './types.js'
 import { roundIsOpen } from './round.js'
 import { load } from './storage.js'
@@ -104,10 +107,76 @@ export const calculateSetPoints = (
   return setPoints
 }
 
+export const getDefaultRankingOrder = (setsToWin?: number): RankingOrder => {
+  if (setsToWin !== undefined && setsToWin !== null && setsToWin > 1) {
+    return ['points', 'setPoints', 'buchholz']
+  }
+  return ['points', 'buchholz']
+}
+
+export const getRankingOrder = (): RankingOrder => {
+  const setsToWin = load('setsToWin') as number | undefined
+  if (setsToWin === undefined || setsToWin === null || setsToWin === 1) {
+    return ['points', 'buchholz']
+  }
+
+  const rankingOrder = load('rankingOrder') as RankingOrder | undefined
+  const availableParams: RankingParameter[] = [
+    'points',
+    'buchholz',
+    'setPoints',
+  ]
+
+  if (rankingOrder && Array.isArray(rankingOrder)) {
+    const filtered = rankingOrder.filter((p) =>
+      availableParams.includes(p as RankingParameter)
+    ) as RankingParameter[]
+    const missing = availableParams.filter(
+      (p) => !filtered.includes(p as RankingParameter)
+    )
+    return [...filtered, ...missing]
+  }
+  return getDefaultRankingOrder(setsToWin)
+}
+
+const getParameterIndex = (
+  param: RankingParameter,
+  order: RankingOrder
+): number => {
+  const index = order.indexOf(param)
+  return index === -1 ? order.length : index
+}
+
+const getRankingValue = (row: RankingRow, param: RankingParameter): number => {
+  switch (param) {
+    case 'points':
+      return row[1]
+    case 'buchholz':
+      return row[2]
+    case 'setPoints':
+      return row[3]
+  }
+}
+
+export const createRankingSort = (order: RankingOrder) => {
+  return (here: RankingRow, there: RankingRow) => {
+    for (const param of order) {
+      const hereValue = getRankingValue(here, param)
+      const thereValue = getRankingValue(there, param)
+      if (thereValue !== hereValue) {
+        return thereValue - hereValue
+      }
+    }
+    return 0
+  }
+}
+
 export const calculateRanking = (
   participants: Player[],
-  history: History
+  history: History,
+  rankingOrder?: RankingOrder
 ): Ranking => {
+  const order = rankingOrder || getRankingOrder()
   let points = calculatePoints(participants, history)
   let buchholz = calculateBuchholz(points, history)
   let setPoints = calculateSetPoints(participants, history)
@@ -117,10 +186,7 @@ export const calculateRanking = (
     buchholz[participant],
     setPoints[participant],
   ])
-  return ranking.sort(
-    (here, there) =>
-      there[1] - here[1] || there[2] - here[2] || there[3] - here[3]
-  )
+  return ranking.sort(createRankingSort(order))
 }
 
 export const sortTeamsByRanking = (teams: Team[], ranking: Ranking): Team[] => {

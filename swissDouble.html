@@ -503,6 +503,67 @@ h2 {
   width: 18px;
   height: 18px;
 }
+
+.ranking-order-section {
+  margin-top: 16px;
+}
+
+.ranking-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ranking-order-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+}
+
+.ranking-order-number {
+  min-width: 24px;
+  font-weight: bold;
+}
+
+.ranking-order-label {
+  flex: 1;
+}
+
+.ranking-order-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-ranking-order-up,
+.btn-ranking-order-down {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-ranking-order-up:hover:not(:disabled),
+.btn-ranking-order-down:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.btn-ranking-order-up:disabled,
+.btn-ranking-order-down:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .alert {
   z-index: 2;
   width: 100%;
@@ -533,36 +594,108 @@ h2 {
 </style>
     <script>"use strict";
 (() => {
-  // app/types.ts
-  var RegularMatch = class _RegularMatch {
-    constructor(teams, setsWon = [null, null]) {
-      this.teams = teams;
-      this.setsWon = setsWon;
+  // app/utils.ts
+  var setDiff = (these, those) => new Set([...these].filter((element) => !those.includes(element)));
+  var drawRandom = (set) => {
+    let array = Array.from(set);
+    return array[Math.floor(Math.random() * array.length)];
+  };
+  var findDuplicates = (array) => array.filter((item, index) => array.indexOf(item) !== index);
+  var isTruthy = (value) => {
+    try {
+      return !!value.length;
+    } catch {
     }
-    get winningTeam() {
-      if (this.setsWon[0] === null || this.setsWon[1] === null) {
-        return null;
-      }
-      const setsToWin = load("setsToWin", 1);
-      if (this.setsWon[0] === setsToWin && this.setsWon[1] !== setsToWin) return 0;
-      if (this.setsWon[1] === setsToWin && this.setsWon[0] !== setsToWin) return 1;
-      return null;
+    try {
+      return !!Object.keys(value).length;
+    } catch {
     }
-    static fromPlainObject(obj) {
-      if (obj.setsWon !== void 0) {
-        return new _RegularMatch(obj.teams, obj.setsWon);
-      } else if (obj.winningTeam !== void 0 && obj.winningTeam !== null) {
-        const setsWon = obj.winningTeam === 0 ? [1, 0] : [0, 1];
-        return new _RegularMatch(obj.teams, setsWon);
+    try {
+      return !!value.size;
+    } catch {
+    }
+    return !!value;
+  };
+  var randomId = () => Math.random().toString(36).replace(/^0\./, "_");
+  var groupBy = (array, comparator) => {
+    if (!isTruthy(array)) return [];
+    const groups = [];
+    let currentGroup = [array[0]];
+    for (const element of array.slice(1)) {
+      if (comparator(currentGroup[0], element)) {
+        currentGroup.push(element);
       } else {
-        return new _RegularMatch(obj.teams, [null, null]);
+        groups.push(currentGroup);
+        currentGroup = [element];
       }
     }
-    toJSON() {
-      return {
-        teams: this.teams,
-        setsWon: this.setsWon
-      };
+    groups.push(currentGroup);
+    return groups;
+  };
+  var popRandom = (list) => list.splice(Math.floor(Math.random() * list.length), 1)[0];
+
+  // app/freeGamers.ts
+  var DEFAULT_FREE_GAME_STRATEGY = "bottom-ranking";
+  var getFreeGameCount = (player, history) => {
+    let count = 0;
+    for (const round of history) {
+      for (const match of round) {
+        if (!("isFreeGame" in match)) {
+          continue;
+        }
+        if (match.player == player) {
+          count++;
+        }
+      }
+    }
+    return count;
+  };
+  var selectByRanking = (eligiblePlayers, ranking, count) => {
+    const rankingMap = /* @__PURE__ */ new Map();
+    for (let i = 0; i < ranking.length; i++) {
+      rankingMap.set(ranking[i][0], i);
+    }
+    const sortedEligible = [...eligiblePlayers].sort((a, b) => {
+      const rankA = rankingMap.get(a) ?? Infinity;
+      const rankB = rankingMap.get(b) ?? Infinity;
+      return rankA - rankB;
+    });
+    return sortedEligible.slice(0, count);
+  };
+  var selectRandom = (eligiblePlayers, count) => {
+    const selected = [];
+    const available = new Set(eligiblePlayers);
+    for (let i = 0; i < count && available.size > 0; i++) {
+      const player = drawRandom(available);
+      selected.push(player);
+      available.delete(player);
+    }
+    return selected;
+  };
+  var calculateFreeGamers = (participants, history, strategy = DEFAULT_FREE_GAME_STRATEGY) => {
+    const rankingOrder = getRankingOrder();
+    let ranking = calculateRanking(participants, history, rankingOrder);
+    const participantCount = participants.length;
+    const freeGamesCount = participantCount % 4;
+    let freeGamers = [];
+    if (freeGamesCount == 0) {
+      return freeGamers;
+    }
+    const freeGameCounts = {};
+    for (const participant of participants) {
+      freeGameCounts[participant] = getFreeGameCount(participant, history);
+    }
+    const minFreeGames = Math.min(...Object.values(freeGameCounts));
+    const eligiblePlayers = [];
+    for (const [player, _] of ranking.reverse()) {
+      if (freeGameCounts[player] === minFreeGames) {
+        eligiblePlayers.push(player);
+      }
+    }
+    if (strategy === "random") {
+      return selectRandom(eligiblePlayers, freeGamesCount);
+    } else {
+      return selectByRanking(eligiblePlayers, ranking, freeGamesCount);
     }
   };
 
@@ -577,7 +710,8 @@ h2 {
     "correctingRound",
     "freeGameStrategy",
     "pairingStrategy",
-    "setsToWin"
+    "setsToWin",
+    "rankingOrder"
   ];
   var ROOT = "swiss-double";
   var getStoreValue = () => {
@@ -622,69 +756,38 @@ h2 {
     return setsToWin;
   };
 
-  // app/utils.ts
-  var setDiff = (these, those) => new Set([...these].filter((element) => !those.includes(element)));
-  var drawRandom = (set) => {
-    let array = Array.from(set);
-    return array[Math.floor(Math.random() * array.length)];
-  };
-  var findDuplicates = (array) => array.filter((item, index) => array.indexOf(item) !== index);
-  var isTruthy = (value) => {
-    try {
-      return !!value.length;
-    } catch {
+  // app/types.ts
+  var RegularMatch = class _RegularMatch {
+    constructor(teams, setsWon = [null, null]) {
+      this.teams = teams;
+      this.setsWon = setsWon;
     }
-    try {
-      return !!Object.keys(value).length;
-    } catch {
+    get winningTeam() {
+      if (this.setsWon[0] === null || this.setsWon[1] === null) {
+        return null;
+      }
+      const setsToWin = load("setsToWin", 1);
+      if (this.setsWon[0] === setsToWin && this.setsWon[1] !== setsToWin) return 0;
+      if (this.setsWon[1] === setsToWin && this.setsWon[0] !== setsToWin) return 1;
+      return null;
     }
-    try {
-      return !!value.size;
-    } catch {
-    }
-    return !!value;
-  };
-  var randomId = () => Math.random().toString(36).replace(/^0\./, "_");
-  var groupBy = (array, comparator) => {
-    if (!isTruthy(array)) return [];
-    const groups = [];
-    let currentGroup = [array[0]];
-    for (const element of array.slice(1)) {
-      if (comparator(currentGroup[0], element)) {
-        currentGroup.push(element);
+    static fromPlainObject(obj) {
+      if (obj.setsWon !== void 0) {
+        return new _RegularMatch(obj.teams, obj.setsWon);
+      } else if (obj.winningTeam !== void 0 && obj.winningTeam !== null) {
+        const setsWon = obj.winningTeam === 0 ? [1, 0] : [0, 1];
+        return new _RegularMatch(obj.teams, setsWon);
       } else {
-        groups.push(currentGroup);
-        currentGroup = [element];
+        return new _RegularMatch(obj.teams, [null, null]);
       }
     }
-    groups.push(currentGroup);
-    return groups;
-  };
-  var popRandom = (list) => list.splice(Math.floor(Math.random() * list.length), 1)[0];
-
-  // app/dom.ts
-  var readFromInputField = (id) => document.getElementById(id).value;
-  var writeToInputField = (id, value) => {
-    ;
-    document.getElementById(id).value = value;
-    return true;
-  };
-  function htmlElement(tag, html) {
-    html = html.trim();
-    const template = document.createElement("template");
-    template.innerHTML = html;
-    const result = template.content.children;
-    if (result.length !== 1) {
-      throw new Error(`Expected exactly one element, got ${result.length}`);
+    toJSON() {
+      return {
+        teams: this.teams,
+        setsWon: this.setsWon
+      };
     }
-    const element = result[0];
-    if (element.tagName.toLowerCase() !== tag.toLowerCase()) {
-      throw new Error(
-        `Element tag mismatch: expected ${tag}, got ${element.tagName.toLowerCase()}`
-      );
-    }
-    return element;
-  }
+  };
 
   // app/pairingStrategy.ts
   var DEFAULT_PAIRING_STRATEGY = "power-pairing";
@@ -753,7 +856,8 @@ h2 {
   var determineNextRound = (history) => {
     const activeParticipants = getActiveParticipants();
     let [teams, freeGamers] = determineTeams(activeParticipants, history);
-    let ranking = calculateRanking(activeParticipants, history);
+    const rankingOrder = getRankingOrder();
+    let ranking = calculateRanking(activeParticipants, history, rankingOrder);
     const pairingStrategy = load(
       "pairingStrategy",
       DEFAULT_PAIRING_STRATEGY
@@ -942,7 +1046,58 @@ h2 {
     }
     return setPoints;
   };
-  var calculateRanking = (participants, history) => {
+  var getDefaultRankingOrder = (setsToWin) => {
+    if (setsToWin !== void 0 && setsToWin !== null && setsToWin > 1) {
+      return ["points", "setPoints", "buchholz"];
+    }
+    return ["points", "buchholz"];
+  };
+  var getRankingOrder = () => {
+    const setsToWin = load("setsToWin");
+    if (setsToWin === void 0 || setsToWin === null || setsToWin === 1) {
+      return ["points", "buchholz"];
+    }
+    const rankingOrder = load("rankingOrder");
+    const availableParams = [
+      "points",
+      "buchholz",
+      "setPoints"
+    ];
+    if (rankingOrder && Array.isArray(rankingOrder)) {
+      const filtered = rankingOrder.filter(
+        (p) => availableParams.includes(p)
+      );
+      const missing = availableParams.filter(
+        (p) => !filtered.includes(p)
+      );
+      return [...filtered, ...missing];
+    }
+    return getDefaultRankingOrder(setsToWin);
+  };
+  var getRankingValue = (row, param) => {
+    switch (param) {
+      case "points":
+        return row[1];
+      case "buchholz":
+        return row[2];
+      case "setPoints":
+        return row[3];
+    }
+  };
+  var createRankingSort = (order) => {
+    return (here, there) => {
+      for (const param of order) {
+        const hereValue = getRankingValue(here, param);
+        const thereValue = getRankingValue(there, param);
+        if (thereValue !== hereValue) {
+          return thereValue - hereValue;
+        }
+      }
+      return 0;
+    };
+  };
+  var calculateRanking = (participants, history, rankingOrder) => {
+    const order = rankingOrder || getRankingOrder();
     let points = calculatePoints(participants, history);
     let buchholz = calculateBuchholz(points, history);
     let setPoints = calculateSetPoints(participants, history);
@@ -952,9 +1107,7 @@ h2 {
       buchholz[participant],
       setPoints[participant]
     ]);
-    return ranking.sort(
-      (here, there) => there[1] - here[1] || there[2] - here[2] || there[3] - here[3]
-    );
+    return ranking.sort(createRankingSort(order));
   };
   var sortTeamsByRanking = (teams, ranking) => {
     const rankingMap = {};
@@ -974,69 +1127,29 @@ h2 {
     return teams;
   };
 
-  // app/freeGamers.ts
-  var DEFAULT_FREE_GAME_STRATEGY = "bottom-ranking";
-  var getFreeGameCount = (player, history) => {
-    let count = 0;
-    for (const round of history) {
-      for (const match of round) {
-        if (!("isFreeGame" in match)) {
-          continue;
-        }
-        if (match.player == player) {
-          count++;
-        }
-      }
-    }
-    return count;
+  // app/dom.ts
+  var readFromInputField = (id) => document.getElementById(id).value;
+  var writeToInputField = (id, value) => {
+    ;
+    document.getElementById(id).value = value;
+    return true;
   };
-  var selectByRanking = (eligiblePlayers, ranking, count) => {
-    const rankingMap = /* @__PURE__ */ new Map();
-    for (let i = 0; i < ranking.length; i++) {
-      rankingMap.set(ranking[i][0], i);
+  function htmlElement(tag, html) {
+    html = html.trim();
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    const result = template.content.children;
+    if (result.length !== 1) {
+      throw new Error(`Expected exactly one element, got ${result.length}`);
     }
-    const sortedEligible = [...eligiblePlayers].sort((a, b) => {
-      const rankA = rankingMap.get(a) ?? Infinity;
-      const rankB = rankingMap.get(b) ?? Infinity;
-      return rankA - rankB;
-    });
-    return sortedEligible.slice(0, count);
-  };
-  var selectRandom = (eligiblePlayers, count) => {
-    const selected = [];
-    const available = new Set(eligiblePlayers);
-    for (let i = 0; i < count && available.size > 0; i++) {
-      const player = drawRandom(available);
-      selected.push(player);
-      available.delete(player);
+    const element = result[0];
+    if (element.tagName.toLowerCase() !== tag.toLowerCase()) {
+      throw new Error(
+        `Element tag mismatch: expected ${tag}, got ${element.tagName.toLowerCase()}`
+      );
     }
-    return selected;
-  };
-  var calculateFreeGamers = (participants, history, strategy = DEFAULT_FREE_GAME_STRATEGY) => {
-    let ranking = calculateRanking(participants, history);
-    const participantCount = participants.length;
-    const freeGamesCount = participantCount % 4;
-    let freeGamers = [];
-    if (freeGamesCount == 0) {
-      return freeGamers;
-    }
-    const freeGameCounts = {};
-    for (const participant of participants) {
-      freeGameCounts[participant] = getFreeGameCount(participant, history);
-    }
-    const minFreeGames = Math.min(...Object.values(freeGameCounts));
-    const eligiblePlayers = [];
-    for (const [player, _] of ranking.reverse()) {
-      if (freeGameCounts[player] === minFreeGames) {
-        eligiblePlayers.push(player);
-      }
-    }
-    if (strategy === "random") {
-      return selectRandom(eligiblePlayers, freeGamesCount);
-    } else {
-      return selectByRanking(eligiblePlayers, ranking, freeGamesCount);
-    }
-  };
+    return element;
+  }
 
   // app/components/alert.ts
   var createAlert = (message, callback = null) => {
@@ -1196,6 +1309,12 @@ h2 {
           </div>
         </div>
       </div>
+
+      <div class="ranking-order-section" id="ranking-order-section" style="display: none;">
+        <div class="label">Reihenfolge der Wertung</div>
+        <div id="ranking-order-list" class="ranking-order-list"></div>
+      </div>
+
       <div class="textarea-with-numbers">
         <div class="line-numbers" id="participants-line-numbers">1</div>
         <textarea id="input-participants" rows="8" type="text" class="input"></textarea>
@@ -1210,7 +1329,11 @@ h2 {
     );
     document.getElementById("tournament-data").replaceChildren(dataForm);
     setupLineNumbers();
+    updateRankingOrderVisibility();
     document.getElementById("action-start-tournament").addEventListener("click", startTournament);
+    document.getElementById("input-sets-to-win").addEventListener("change", () => {
+      updateRankingOrderVisibility();
+    });
     document.getElementById("input-participants").addEventListener("keyup", (event) => {
       if (event.key == "Enter") {
         onParticipantInputChange();
@@ -1306,6 +1429,108 @@ h2 {
       if (powerPairingRadio) powerPairingRadio.checked = false;
       if (randomPairingRadio) randomPairingRadio.checked = true;
     }
+  };
+  var getParameterLabel = (param) => {
+    switch (param) {
+      case "points":
+        return "Punkte";
+      case "buchholz":
+        return "Buchholz";
+      case "setPoints":
+        return "Satzpunkte";
+    }
+  };
+  var getAvailableParameters = () => {
+    const setsToWin = readSetsToWin();
+    if (setsToWin !== void 0 && setsToWin !== null && setsToWin > 1) {
+      return ["points", "buchholz", "setPoints"];
+    }
+    return ["points", "buchholz"];
+  };
+  var shouldShowRankingOrder = () => {
+    const setsToWin = readSetsToWin();
+    return setsToWin !== void 0 && setsToWin !== null && setsToWin > 1;
+  };
+  var setupRankingOrder = () => {
+    const container = document.getElementById("ranking-order-list");
+    if (!container) return;
+    const availableParams = getAvailableParameters();
+    const currentOrder = readRankingOrder();
+    const renderOrder = (order) => {
+      container.innerHTML = "";
+      order.forEach((param, index) => {
+        const row = htmlElement(
+          "div",
+          `
+        <div class="ranking-order-item" data-param="${param}">
+          <span class="ranking-order-number">${index + 1}.</span>
+          <span class="ranking-order-label">${getParameterLabel(param)}</span>
+          <div class="ranking-order-buttons">
+            <button class="btn-ranking-order-up" ${index === 0 ? "disabled" : ""} data-index="${index}">\u2191</button>
+            <button class="btn-ranking-order-down" ${index === order.length - 1 ? "disabled" : ""} data-index="${index}">\u2193</button>
+          </div>
+        </div>
+      `
+        );
+        container.appendChild(row);
+      });
+      container.querySelectorAll(".btn-ranking-order-up").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const index = parseInt(btn.dataset.index || "0");
+          const newOrder = [...order];
+          if (index > 0) {
+            ;
+            [newOrder[index - 1], newOrder[index]] = [
+              newOrder[index],
+              newOrder[index - 1]
+            ];
+            writeRankingOrder(newOrder);
+            renderOrder(newOrder);
+          }
+        });
+      });
+      container.querySelectorAll(".btn-ranking-order-down").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const index = parseInt(btn.dataset.index || "0");
+          const newOrder = [...order];
+          if (index < newOrder.length - 1) {
+            ;
+            [newOrder[index], newOrder[index + 1]] = [
+              newOrder[index + 1],
+              newOrder[index]
+            ];
+            writeRankingOrder(newOrder);
+            renderOrder(newOrder);
+          }
+        });
+      });
+    };
+    renderOrder(currentOrder);
+  };
+  var updateRankingOrderVisibility = () => {
+    const section = document.getElementById("ranking-order-section");
+    if (!section) return;
+    if (shouldShowRankingOrder()) {
+      section.style.display = "block";
+      setupRankingOrder();
+    } else {
+      section.style.display = "none";
+      const defaultOrder = getDefaultRankingOrder(readSetsToWin());
+      writeRankingOrder(defaultOrder);
+    }
+  };
+  var readRankingOrder = () => {
+    const stored = load("rankingOrder");
+    if (stored && Array.isArray(stored)) {
+      const availableParams = getAvailableParameters();
+      const filtered = stored.filter((p) => availableParams.includes(p));
+      const missing = availableParams.filter((p) => !filtered.includes(p));
+      return [...filtered, ...missing];
+    }
+    return getDefaultRankingOrder(readSetsToWin());
+  };
+  var writeRankingOrder = (order) => {
+    dump("rankingOrder", order);
   };
 
   // app/components/openDialog.ts
@@ -1875,7 +2100,8 @@ h2 {
       return;
     }
     const playerRows = activePlayers.map((player) => {
-      const ranking = calculateRanking(participants, load("history") || []);
+      const rankingOrder = getRankingOrder();
+      const ranking = calculateRanking(participants, load("history") || [], rankingOrder);
       const playerRanking = ranking.find(([name]) => name === player);
       const points = playerRanking ? playerRanking[1] : 0;
       return `
@@ -1980,40 +2206,59 @@ h2 {
     dom.querySelector("#action-manage-players").addEventListener("click", createManagePlayersDialog);
     return dom;
   };
-  var tableDom = (rankingGroups, departedPlayers) => {
+  var getParameterLabel2 = (param) => {
+    switch (param) {
+      case "points":
+        return "Punkte";
+      case "buchholz":
+        return "Buchholz";
+      case "setPoints":
+        return "Satzpunkte";
+    }
+  };
+  var getParameterValue = (row, param) => {
+    switch (param) {
+      case "points":
+        return String(row[1]);
+      case "buchholz":
+        return String(row[2]);
+      case "setPoints": {
+        const value = row[3];
+        return value > 0 ? `+${value}` : value < 0 ? `${value}` : "0";
+      }
+    }
+  };
+  var tableDom = (rankingGroups, departedPlayers, rankingOrder) => {
     const dom = htmlElement("table", `<table class="result-table"></table>`);
     const rows = [];
+    const headerCells = [
+      "<th>Platz</th>",
+      "<th>Name</th>",
+      ...rankingOrder.map((param) => `<th>${getParameterLabel2(param)}</th>`)
+    ];
     rows.push(
-      htmlElement(
-        "tr",
-        `
-      <tr>
-        <th>Platz</th>
-        <th>Name</th>
-        <th>Punkte</th>
-        <th>Buchholz</th>
-        <th>Satzpunkte</th>
-      </tr>
-    `
-      )
+      htmlElement("tr", `<tr>${headerCells.join("")}</tr>`)
     );
     let rank = 1;
     let dark = true;
     for (const group of rankingGroups) {
-      for (const [name, points, buchholz, setPoints] of group) {
+      for (const row of group) {
+        const [name] = row;
         const isDeparted = departedPlayers && departedPlayers[name] !== void 0;
         const departedText = isDeparted ? ` (nach Runde ${departedPlayers[name]})` : "";
-        const formattedSetPoints = setPoints > 0 ? `+${setPoints}` : setPoints < 0 ? `${setPoints}` : "0";
+        const dataCells = [
+          `<td>${rank}</td>`,
+          `<td>${name}${departedText}</td>`,
+          ...rankingOrder.map(
+            (param) => `<td>${getParameterValue(row, param)}</td>`
+          )
+        ];
         rows.push(
           htmlElement(
             "tr",
             `
           <tr class="${dark ? "dark" : "bright"} ${isDeparted ? "departed" : ""}">
-            <td>${rank}</td>
-            <td>${name}${departedText}</td>
-            <td>${points}</td>
-            <td>${buchholz}</td>
-            <td>${formattedSetPoints}</td>
+            ${dataCells.join("")}
           </tr>
         `
           )
@@ -2033,7 +2278,8 @@ h2 {
   };
   var createRankingTable = (participants, history) => {
     if (!participants) return;
-    const ranking = calculateRanking(participants, history);
+    const rankingOrder = getRankingOrder();
+    const ranking = calculateRanking(participants, history, rankingOrder);
     const groups = groupRankingByPointsAndBuchholz(ranking);
     const title = load("title");
     const roundCount = load("roundCount");
@@ -2050,7 +2296,7 @@ h2 {
       titleDom(title),
       headingDom(rankedRound, tournamentFinished),
       ...showManageButton ? [managePlayersButtonDom()] : [],
-      tableDom(groups, departedPlayers)
+      tableDom(groups, departedPlayers, rankingOrder)
     ];
     dom.replaceChildren(...elements);
     document.getElementById("tournament-data").replaceChildren(dom);
@@ -2093,6 +2339,13 @@ h2 {
     writePairingStrategy(pairingStrategy);
     const setsToWin = load("setsToWin", 1);
     writeSetsToWin(setsToWin);
+    const rankingOrder = load("rankingOrder");
+    if (rankingOrder && setsToWin > 1) {
+      writeRankingOrder(rankingOrder);
+    } else {
+      const defaultOrder = getDefaultRankingOrder(setsToWin);
+      writeRankingOrder(defaultOrder);
+    }
   };
   var startTournament = () => {
     const history = load("history") || [];
@@ -2119,6 +2372,8 @@ h2 {
     dump("freeGameStrategy", freeGameStrategy);
     dump("pairingStrategy", pairingStrategy);
     dump("setsToWin", setsToWin);
+    const rankingOrder = readRankingOrder();
+    dump("rankingOrder", rankingOrder);
     dump("history", history);
     setNextRound(history, roundCount);
     render();

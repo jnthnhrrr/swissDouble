@@ -1,6 +1,7 @@
-import { dump } from '../storage.js'
+import { dump, load } from '../storage.js'
 import { readFromInputField, writeToInputField, htmlElement } from '../dom.js'
-
+import type { RankingOrder, RankingParameter } from '../types.js'
+import { getDefaultRankingOrder } from '../ranking.js'
 import { startTournament } from '../app.js'
 
 export const createDataForm = () => {
@@ -89,6 +90,12 @@ export const createDataForm = () => {
           </div>
         </div>
       </div>
+
+      <div class="ranking-order-section" id="ranking-order-section" style="display: none;">
+        <div class="label">Reihenfolge der Wertung</div>
+        <div id="ranking-order-list" class="ranking-order-list"></div>
+      </div>
+
       <div class="textarea-with-numbers">
         <div class="line-numbers" id="participants-line-numbers">1</div>
         <textarea id="input-participants" rows="8" type="text" class="input"></textarea>
@@ -103,10 +110,17 @@ export const createDataForm = () => {
   )
   document.getElementById('tournament-data')!.replaceChildren(dataForm)
   setupLineNumbers()
+  updateRankingOrderVisibility()
 
   document
     .getElementById('action-start-tournament')!
     .addEventListener('click', startTournament)
+
+  document
+    .getElementById('input-sets-to-win')!
+    .addEventListener('change', () => {
+      updateRankingOrderVisibility()
+    })
 
   document
     .getElementById('input-participants')!
@@ -231,4 +245,119 @@ export const writePairingStrategy = (strategy: 'power-pairing' | 'random') => {
     if (powerPairingRadio) powerPairingRadio.checked = false
     if (randomPairingRadio) randomPairingRadio.checked = true
   }
+}
+
+const getParameterLabel = (param: RankingParameter): string => {
+  switch (param) {
+    case 'points':
+      return 'Punkte'
+    case 'buchholz':
+      return 'Buchholz'
+    case 'setPoints':
+      return 'Satzpunkte'
+  }
+}
+
+const getAvailableParameters = (): RankingParameter[] => {
+  const setsToWin = readSetsToWin()
+  if (setsToWin !== undefined && setsToWin !== null && setsToWin > 1) {
+    return ['points', 'buchholz', 'setPoints']
+  }
+  return ['points', 'buchholz']
+}
+
+const shouldShowRankingOrder = (): boolean => {
+  const setsToWin = readSetsToWin()
+  return setsToWin !== undefined && setsToWin !== null && setsToWin > 1
+}
+
+const setupRankingOrder = () => {
+  const container = document.getElementById('ranking-order-list')!
+  if (!container) return
+  const availableParams = getAvailableParameters()
+  const currentOrder = readRankingOrder()
+
+  const renderOrder = (order: RankingOrder) => {
+    container.innerHTML = ''
+    order.forEach((param, index) => {
+      const row = htmlElement(
+        'div',
+        `
+        <div class="ranking-order-item" data-param="${param}">
+          <span class="ranking-order-number">${index + 1}.</span>
+          <span class="ranking-order-label">${getParameterLabel(param)}</span>
+          <div class="ranking-order-buttons">
+            <button class="btn-ranking-order-up" ${
+              index === 0 ? 'disabled' : ''
+            } data-index="${index}">↑</button>
+            <button class="btn-ranking-order-down" ${
+              index === order.length - 1 ? 'disabled' : ''
+            } data-index="${index}">↓</button>
+          </div>
+        </div>
+      `
+      )
+      container.appendChild(row)
+    })
+
+    container.querySelectorAll('.btn-ranking-order-up').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const index = parseInt((btn as HTMLElement).dataset.index || '0')
+        const newOrder = [...order]
+        if (index > 0) {
+          ;[newOrder[index - 1], newOrder[index]] = [
+            newOrder[index],
+            newOrder[index - 1],
+          ]
+          writeRankingOrder(newOrder)
+          renderOrder(newOrder)
+        }
+      })
+    })
+
+    container.querySelectorAll('.btn-ranking-order-down').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const index = parseInt((btn as HTMLElement).dataset.index || '0')
+        const newOrder = [...order]
+        if (index < newOrder.length - 1) {
+          ;[newOrder[index], newOrder[index + 1]] = [
+            newOrder[index + 1],
+            newOrder[index],
+          ]
+          writeRankingOrder(newOrder)
+          renderOrder(newOrder)
+        }
+      })
+    })
+  }
+
+  renderOrder(currentOrder)
+}
+
+const updateRankingOrderVisibility = () => {
+  const section = document.getElementById('ranking-order-section')!
+  if (!section) return
+  if (shouldShowRankingOrder()) {
+    section.style.display = 'block'
+    setupRankingOrder()
+  } else {
+    section.style.display = 'none'
+    const defaultOrder = getDefaultRankingOrder(readSetsToWin())
+    writeRankingOrder(defaultOrder)
+  }
+}
+
+export const readRankingOrder = (): RankingOrder => {
+  const stored = load('rankingOrder')
+  if (stored && Array.isArray(stored)) {
+    const availableParams = getAvailableParameters()
+    const filtered = stored.filter((p) => availableParams.includes(p))
+    const missing = availableParams.filter((p) => !filtered.includes(p))
+    return [...filtered, ...missing]
+  }
+  return getDefaultRankingOrder(readSetsToWin())
+}
+
+export const writeRankingOrder = (order: RankingOrder) => {
+  dump('rankingOrder', order)
 }

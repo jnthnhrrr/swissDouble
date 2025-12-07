@@ -69,6 +69,8 @@ export type DepartedPlayersRecord = Record<Player, number>
 
 export type FreeGameStrategy = 'bottom-ranking' | 'random'
 export type PairingStrategy = 'power-pairing' | 'random'
+export type RankingParameter = 'points' | 'setPoints' | 'buchholz'
+export type RankingOrder = RankingParameter[]
 
 export type TournamentTitle = string
 export interface Tournament {
@@ -80,4 +82,5 @@ export interface Tournament {
   freeGameStrategy: FreeGameStrategy
   pairingStrategy: PairingStrategy
   setsToWin?: number
+  rankingOrder?: RankingOrder
 }
