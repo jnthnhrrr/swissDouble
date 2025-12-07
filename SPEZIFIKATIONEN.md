@@ -32,26 +32,36 @@ vor Turnierbeginn ausgewählt werden können:
 
 # Setzung
 
-1. Nach der Bestimmung der Doppel-Teams für die nächste Runde wird die neue
-   Runde nach dem "Power Pairing" (auch: "Schweizer System") gesetzt: Jedes Team
-   spielt gegen ein Team mit der gleichen Punktzahl. Falls dies nicht möglich
-   ist, wird diejenige Setzung gewählt, die den Unterschied minimiert.
+Nach der Bestimmung der Doppel-Teams für die nächste Runde werden die Spiele der
+neuen Runde entsprechend der gewählten Setzungsmethode gesetzt.
 
-2. In der aktuellen Implementierung gibt es zwei bemerkenswerte Unterschiede zum
-   Schweizer System:
+Das Programm unterstützt zwei Optionen für die Setzung der Teams, die vor
+Turnierbeginn ausgewählt werden können:
 
-    1. Im Schweizer System wird jede Gruppe "gefaltet", sodass das oberste
-       Mitglied einer Gruppe gegen das unterste Mitglied der Gruppe spielt, und
-       so weiter. Im Schweizer System wird diese Rangfolge entsprechend der
-       Setzung der Teilnehmer vor dem Turnier bestimmt, unter Berücksichtigung
-       einer vorherigen, externen Rangliste. Wir machen das nicht.
++ Power-Pairing (Schweizer System): Teams werden nach dem "Power Pairing" (auch:
+  "Schweizer System") gesetzt: Jedes Team spielt gegen ein Team mit der gleichen
+  Punktzahl. Falls dies nicht möglich ist, wird diejenige Setzung gewählt, die
+  den Unterschied minimiert. Dies ist die Standardstrategie.
 
-    2. Im Schweizer System wird die Anzahl der Male, die ein Spieler gegen einen
-       Spieler aus einer anderen Gruppe (mehr Punkte oder weniger Punkte)
-       gesetzt wurde ("hochgelost" bzw. "runtergelost"), während des gesamten
-       Turniers verfolgt und bei der neuen Setzung berücksichtigt, um die Anzahl
-       der Male zu minimieren, in denen ein Spieler außerhalb seiner Gruppe
-       spielen muss. Das machen wir nicht.
++ Zufällig: Teams werden zufällig gegeneinader gesetzt.
+
+## Power-Pairing Details
+
+In der aktuellen Implementierung gibt es zwei bemerkenswerte Unterschiede zum
+Schweizer System:
+
+1. Im Schweizer System wird jede Gruppe "gefaltet", sodass das oberste Mitglied
+   einer Gruppe gegen das unterste Mitglied der Gruppe spielt, und so weiter. Im
+   Schweizer System wird diese Rangfolge entsprechend der Setzung der Teilnehmer
+   vor dem Turnier bestimmt, unter Berücksichtigung einer vorherigen, externen
+   Rangliste. Wir machen das nicht.
+
+2. Im Schweizer System wird die Anzahl der Male, die ein Spieler gegen einen
+   Spieler aus einer anderen Gruppe (mehr Punkte oder weniger Punkte) gesetzt
+   wurde ("hochgelost" bzw. "runtergelost"), während des gesamten Turniers
+   verfolgt und bei der neuen Setzung berücksichtigt, um die Anzahl der Male zu
+   minimieren, in denen ein Spieler außerhalb seiner Gruppe spielen muss. Das
+   machen wir nicht.
 
 # Rangliste
 

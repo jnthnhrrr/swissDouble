@@ -26,30 +26,57 @@ export const createDataForm = () => {
         </div>
       </div>
 
-      <div class="label">Freilos-Vergabe</div>
-      <div class="radio-group">
-        <label class="radio-label">
-          <input
-            type="radio"
-            name="free-game-strategy"
-            value="bottom-ranking"
-            id="radio-bottom-ranking"
-            checked
-          />
-          Von Unten
-        </label>
-        <label class="radio-label">
-          <input
-            type="radio"
-            name="free-game-strategy"
-            value="random"
-            id="radio-random"
-          />
-          Zufällig
-        </label>
-      </div>
+      <div class="flex">
+        <div class="flex-section">
+          <div class="label">Freilos-Vergabe</div>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="free-game-strategy"
+                value="bottom-ranking"
+                id="radio-bottom-ranking"
+                checked
+              />
+              Von Unten
+            </label>
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="free-game-strategy"
+                value="random"
+                id="radio-random"
+              />
+              Zufällig
+            </label>
+          </div>
+        </div>
 
-      <div class="label">Setzung</div>
+        <div class="flex-section">
+          <div class="label">Setzung</div>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="pairing-strategy"
+                value="power-pairing"
+                id="radio-power-pairing"
+                checked
+              />
+              Power-Pairing ("Schweizer System")
+            </label>
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="pairing-strategy"
+                value="random"
+                id="radio-pairing-random"
+              />
+              Zufällig
+            </label>
+          </div>
+        </div>
+      </div>
       <div class="textarea-with-numbers">
         <div class="line-numbers" id="participants-line-numbers">1</div>
         <textarea id="input-participants" rows="8" type="text" class="input"></textarea>
@@ -157,5 +184,32 @@ export const writeFreeGameStrategy = (
   } else {
     if (bottomRankingRadio) bottomRankingRadio.checked = false
     if (randomRadio) randomRadio.checked = true
+  }
+}
+
+export const readPairingStrategy = (): 'power-pairing' | 'random' => {
+  const powerPairingRadio = document.getElementById(
+    'radio-power-pairing'
+  ) as HTMLInputElement
+  if (powerPairingRadio?.checked) {
+    return 'power-pairing'
+  }
+  return 'random'
+}
+
+export const writePairingStrategy = (strategy: 'power-pairing' | 'random') => {
+  const powerPairingRadio = document.getElementById(
+    'radio-power-pairing'
+  ) as HTMLInputElement
+  const randomPairingRadio = document.getElementById(
+    'radio-pairing-random'
+  ) as HTMLInputElement
+
+  if (strategy === 'power-pairing') {
+    if (powerPairingRadio) powerPairingRadio.checked = true
+    if (randomPairingRadio) randomPairingRadio.checked = false
+  } else {
+    if (powerPairingRadio) powerPairingRadio.checked = false
+    if (randomPairingRadio) randomPairingRadio.checked = true
   }
 }

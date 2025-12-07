@@ -4,9 +4,9 @@ assigned at random every new round.
 
 It is inspired by the Swiss System most prominently used in chess, but does not
 follow it to the letter. The general idea is that the tournament has no
-out-rounds, so every participant plays the same amount of matches. Teams are
-"power paired" in each round, that means each team plays against a team which
-has gained the same amount of points so far.
+out-rounds, so every participant plays the same amount of matches. Teams can be
+paired either using "power pairing", where each team plays against a team which
+has gained the same amount of points so far, or randomly.
 
 For the exact specifications, have a look at SPECIFICATIONS.md.
 

@@ -427,6 +427,7 @@ h2 {
 }
 
 .textarea-with-numbers {
+  margin-top: var(--font-size);
   display: flex;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -479,6 +480,7 @@ h2 {
   gap: 8px;
   cursor: pointer;
   font-weight: normal;
+  font-size: var(--font-size);
 }
 
 .radio-label input[type='radio'] {
@@ -525,7 +527,8 @@ h2 {
     "departedPlayers",
     "savedTournaments",
     "correctingRound",
-    "freeGameStrategy"
+    "freeGameStrategy",
+    "pairingStrategy"
   ];
   var ROOT = "swiss-double";
   var getStoreValue = () => {
@@ -612,6 +615,42 @@ h2 {
     return element;
   }
 
+  // app/pairingStrategy.ts
+  var DEFAULT_PAIRING_STRATEGY = "power-pairing";
+  var pairTeams = (teams, ranking, strategy = DEFAULT_PAIRING_STRATEGY) => {
+    if (strategy === "random") {
+      return pairTeamsRandomly(teams);
+    } else {
+      return pairTeamsByPower(teams, ranking);
+    }
+  };
+  var pairTeamsByPower = (teams, ranking) => {
+    teams = sortTeamsByRanking(teams, ranking);
+    let matches = [];
+    for (let i = 0; i < teams.length; i += 2) {
+      matches.push({
+        teams: [teams[i], teams[i + 1]],
+        winningTeam: null
+      });
+    }
+    return matches;
+  };
+  var pairTeamsRandomly = (teams) => {
+    const shuffled = [...teams];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    let matches = [];
+    for (let i = 0; i < shuffled.length; i += 2) {
+      matches.push({
+        teams: [shuffled[i], shuffled[i + 1]],
+        winningTeam: null
+      });
+    }
+    return matches;
+  };
+
   // app/tournament.ts
   var tournamentHasStarted = (history) => isTruthy(history);
   var tournamentHasFinished = (history, roundCount) => {
@@ -643,8 +682,12 @@ h2 {
     const activeParticipants = getActiveParticipants();
     let [teams, freeGamers] = determineTeams(activeParticipants, history);
     let ranking = calculateRanking(activeParticipants, history);
+    const pairingStrategy = load(
+      "pairingStrategy",
+      DEFAULT_PAIRING_STRATEGY
+    );
     return [
-      ...calculatePowerPairing(teams, ranking),
+      ...pairTeams(teams, ranking, pairingStrategy),
       ...freeGameMatches(freeGamers)
     ];
   };
@@ -707,17 +750,6 @@ h2 {
       teams.push([topPlayer, bottomPlayer]);
     }
     return teams;
-  };
-  var calculatePowerPairing = (teams, ranking) => {
-    teams = sortTeamsByRanking(teams, ranking);
-    let matches = [];
-    for (let i = 0; i < teams.length; i += 2) {
-      matches.push({
-        teams: [teams[i], teams[i + 1]],
-        winningTeam: null
-      });
-    }
-    return matches;
   };
   var calculateForbiddenPartners = (participants, history) => {
     const allParticipants = load("participants");
@@ -987,30 +1019,57 @@ h2 {
         </div>
       </div>
 
-      <div class="label">Freilos-Vergabe</div>
-      <div class="radio-group">
-        <label class="radio-label">
-          <input
-            type="radio"
-            name="free-game-strategy"
-            value="bottom-ranking"
-            id="radio-bottom-ranking"
-            checked
-          />
-          Von Unten
-        </label>
-        <label class="radio-label">
-          <input
-            type="radio"
-            name="free-game-strategy"
-            value="random"
-            id="radio-random"
-          />
-          Zuf\xE4llig
-        </label>
-      </div>
+      <div class="flex">
+        <div class="flex-section">
+          <div class="label">Freilos-Vergabe</div>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="free-game-strategy"
+                value="bottom-ranking"
+                id="radio-bottom-ranking"
+                checked
+              />
+              Von Unten
+            </label>
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="free-game-strategy"
+                value="random"
+                id="radio-random"
+              />
+              Zuf\xE4llig
+            </label>
+          </div>
+        </div>
 
-      <div class="label">Setzung</div>
+        <div class="flex-section">
+          <div class="label">Setzung</div>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="pairing-strategy"
+                value="power-pairing"
+                id="radio-power-pairing"
+                checked
+              />
+              Power-Pairing ("Schweizer System")
+            </label>
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="pairing-strategy"
+                value="random"
+                id="radio-pairing-random"
+              />
+              Zuf\xE4llig
+            </label>
+          </div>
+        </div>
+      </div>
       <div class="textarea-with-numbers">
         <div class="line-numbers" id="participants-line-numbers">1</div>
         <textarea id="input-participants" rows="8" type="text" class="input"></textarea>
@@ -1092,6 +1151,30 @@ h2 {
     } else {
       if (bottomRankingRadio) bottomRankingRadio.checked = false;
       if (randomRadio) randomRadio.checked = true;
+    }
+  };
+  var readPairingStrategy = () => {
+    const powerPairingRadio = document.getElementById(
+      "radio-power-pairing"
+    );
+    if (powerPairingRadio?.checked) {
+      return "power-pairing";
+    }
+    return "random";
+  };
+  var writePairingStrategy = (strategy) => {
+    const powerPairingRadio = document.getElementById(
+      "radio-power-pairing"
+    );
+    const randomPairingRadio = document.getElementById(
+      "radio-pairing-random"
+    );
+    if (strategy === "power-pairing") {
+      if (powerPairingRadio) powerPairingRadio.checked = true;
+      if (randomPairingRadio) randomPairingRadio.checked = false;
+    } else {
+      if (powerPairingRadio) powerPairingRadio.checked = false;
+      if (randomPairingRadio) randomPairingRadio.checked = true;
     }
   };
 
@@ -1754,6 +1837,8 @@ h2 {
       DEFAULT_FREE_GAME_STRATEGY
     );
     writeFreeGameStrategy(freeGameStrategy);
+    const pairingStrategy = load("pairingStrategy", DEFAULT_PAIRING_STRATEGY);
+    writePairingStrategy(pairingStrategy);
   };
   var startTournament = () => {
     const history = load("history") || [];
@@ -1772,10 +1857,12 @@ h2 {
     }
     const roundCount = readRoundCount();
     const freeGameStrategy = readFreeGameStrategy();
+    const pairingStrategy = readPairingStrategy();
     dump("participants", participants);
     dump("roundCount", roundCount);
     dump("title", readTitle());
     dump("freeGameStrategy", freeGameStrategy);
+    dump("pairingStrategy", pairingStrategy);
     dump("history", history);
     setNextRound(history, roundCount);
     render();
@@ -1797,7 +1884,8 @@ h2 {
       participants: load("participants"),
       roundCount: load("roundCount"),
       departedPlayers: load("departedPlayers"),
-      freeGameStrategy: load("freeGameStrategy", DEFAULT_FREE_GAME_STRATEGY)
+      freeGameStrategy: load("freeGameStrategy", DEFAULT_FREE_GAME_STRATEGY),
+      pairingStrategy: load("pairingStrategy", DEFAULT_PAIRING_STRATEGY)
     };
     let storeValue = load("savedTournaments") || {};
     storeValue[title] = tournament;
@@ -1808,7 +1896,8 @@ h2 {
     const savedTournaments = load("savedTournaments");
     const tournament = {
       ...savedTournaments[title],
-      freeGameStrategy: savedTournaments[title].freeGameStrategy || DEFAULT_FREE_GAME_STRATEGY
+      freeGameStrategy: savedTournaments[title].freeGameStrategy || DEFAULT_FREE_GAME_STRATEGY,
+      pairingStrategy: savedTournaments[title].pairingStrategy || DEFAULT_PAIRING_STRATEGY
     };
     for (const key of Object.keys(tournament)) {
       dump(key, tournament[key]);
@@ -1855,11 +1944,17 @@ h2 {
           if (!savedTournaments[title].freeGameStrategy) {
             savedTournaments[title].freeGameStrategy = DEFAULT_FREE_GAME_STRATEGY;
           }
+          if (!savedTournaments[title].pairingStrategy) {
+            savedTournaments[title].pairingStrategy = DEFAULT_PAIRING_STRATEGY;
+          }
         }
         data.savedTournaments = savedTournaments;
       }
       if (!data.freeGameStrategy) {
         data.freeGameStrategy = DEFAULT_FREE_GAME_STRATEGY;
+      }
+      if (!data.pairingStrategy) {
+        data.pairingStrategy = DEFAULT_PAIRING_STRATEGY;
       }
       for (const key of Object.keys(data)) {
         const value = data[key];

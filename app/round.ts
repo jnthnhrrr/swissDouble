@@ -7,12 +7,14 @@ import type {
   FreeGameMatch,
   Ranking,
   FreeGameStrategy,
+  PairingStrategy,
 } from './types.js'
-import { calculateRanking, sortTeamsByRanking } from './ranking.js'
+import { calculateRanking } from './ranking.js'
 import {
   calculateFreeGamers,
   DEFAULT_FREE_GAME_STRATEGY,
 } from './freeGamers.js'
+import { pairTeams, DEFAULT_PAIRING_STRATEGY } from './pairingStrategy.js'
 import { getActiveParticipants, calculateCurrentRound } from './tournament.js'
 import { setDiff, popRandom, drawRandom } from './utils.js'
 import { dump, load } from './storage.js'
@@ -21,8 +23,12 @@ export const determineNextRound = (history: History): Round => {
   const activeParticipants = getActiveParticipants()
   let [teams, freeGamers] = determineTeams(activeParticipants, history)
   let ranking = calculateRanking(activeParticipants, history)
+  const pairingStrategy = load(
+    'pairingStrategy',
+    DEFAULT_PAIRING_STRATEGY
+  ) as PairingStrategy
   return [
-    ...calculatePowerPairing(teams, ranking),
+    ...pairTeams(teams, ranking, pairingStrategy),
     ...freeGameMatches(freeGamers),
   ]
 }
@@ -108,21 +114,6 @@ export const determineTeamsForFirstRound = (
     teams.push([topPlayer, bottomPlayer])
   }
   return teams
-}
-
-export const calculatePowerPairing = (
-  teams: Team[],
-  ranking: Ranking
-): RegularMatch[] => {
-  teams = sortTeamsByRanking(teams, ranking)
-  let matches: RegularMatch[] = []
-  for (let i = 0; i < teams.length; i += 2) {
-    matches.push({
-      teams: [teams[i] as Team, teams[i + 1] as Team],
-      winningTeam: null,
-    })
-  }
-  return matches
 }
 
 export const calculateForbiddenPartners = (

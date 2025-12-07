@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import { calculatePowerPairing } from '../../../dist/round.js'
+import { pairTeams } from '../../../dist/pairingStrategy.js'
 
-describe('calculatePowerPairing', () => {
+describe('pairTeams with power-pairing strategy', () => {
   describe('power pairing logic', () => {
     it('pairs teams by ranking - clear team strength differences', () => {
       const teams = [
@@ -22,7 +22,7 @@ describe('calculatePowerPairing', () => {
         ['Henry', 0, 0],
       ]
 
-      const matches = calculatePowerPairing(teams, ranking)
+      const matches = pairTeams(teams, ranking, 'power-pairing')
 
       expect(matches).to.have.length(2)
 
@@ -61,7 +61,7 @@ describe('calculatePowerPairing', () => {
         ['Henry', 1, 0],
       ]
 
-      const matches = calculatePowerPairing(teams, ranking)
+      const matches = pairTeams(teams, ranking, 'power-pairing')
 
       expect(matches).to.have.length(2)
 
@@ -101,7 +101,7 @@ describe('calculatePowerPairing', () => {
         ['Kate', 'Ben'], // 3 points, 8 buchholz
       ]
 
-      const matches = calculatePowerPairing(teams, ranking)
+      const matches = pairTeams(teams, ranking, 'power-pairing')
 
       expect(matches).to.have.length(2)
 
