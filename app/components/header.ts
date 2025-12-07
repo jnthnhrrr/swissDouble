@@ -1,5 +1,7 @@
 import { createOpenDialog } from './openDialog.js'
 import { htmlElement } from '../dom.js'
+import { load } from '../storage.js'
+import { isTruthy } from '../utils.js'
 
 import {
   createTournament,
@@ -9,6 +11,26 @@ import {
 } from '../app.js'
 
 export const createHeader = () => {
+  const savedTournaments = load('savedTournaments') || {}
+  const hasSavedTournaments = isTruthy(Object.keys(savedTournaments))
+
+  const openTournamentSection = hasSavedTournaments
+    ? `
+        <div id="open-tournament-section" class="section">
+          <div class="width-100 relative">
+            <div class="dropdown width-100">
+              <button
+                id="action-open-tournament"
+                class="btn btn-action btn-yellow width-100"
+              >
+                Öffnen
+              </button>
+            </div>
+          </div>
+        </div>
+      `
+    : ''
+
   const dom = htmlElement(
     'div',
     `
@@ -24,18 +46,7 @@ export const createHeader = () => {
           </button>
         </div>
 
-        <div id="open-tournament-section" class="section">
-          <div class="width-100 relative">
-            <div class="dropdown width-100">
-              <button
-                id="action-open-tournament"
-                class="btn btn-action btn-yellow width-100"
-              >
-                Öffnen
-              </button>
-            </div>
-          </div>
-        </div>
+        ${openTournamentSection}
       </div>
 
       <div class="right-group">
@@ -70,9 +81,10 @@ export const createHeader = () => {
     .getElementById('action-create-tournament')!
     .addEventListener('click', createTournament)
 
-  document
-    .getElementById('action-open-tournament')!
-    .addEventListener('click', createOpenDialog)
+  const openTournamentButton = document.getElementById('action-open-tournament')
+  if (openTournamentButton) {
+    openTournamentButton.addEventListener('click', createOpenDialog)
+  }
 
   document
     .getElementById('action-export-tournament')!

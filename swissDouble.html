@@ -852,6 +852,101 @@ h2 {
     return true;
   };
 
+  // app/dom.ts
+  var readFromInputField = (id) => document.getElementById(id).value;
+  var writeToInputField = (id, value) => {
+    ;
+    document.getElementById(id).value = value;
+    return true;
+  };
+  function htmlElement(tag, html) {
+    html = html.trim();
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    const result = template.content.children;
+    if (result.length !== 1) {
+      throw new Error(`Expected exactly one element, got ${result.length}`);
+    }
+    const element = result[0];
+    if (element.tagName.toLowerCase() !== tag.toLowerCase()) {
+      throw new Error(
+        `Element tag mismatch: expected ${tag}, got ${element.tagName.toLowerCase()}`
+      );
+    }
+    return element;
+  }
+
+  // app/components/alert.ts
+  var createAlert = (message, callback = null) => {
+    message = message.trim();
+    const id = randomId();
+    if (callback) {
+      const dom = htmlElement(
+        "div",
+        `
+      <div id=${id} class="alert">
+        <div class="alert-body">
+          <div class="alert-message">
+            ${message}
+          </div>
+          <div class="flex">
+            <button
+              id="action-confirm-alert-${id}"
+              class="btn btn-alert"
+            >
+              Ja
+            </button>
+            <button
+              id="action-cancel-alert-${id}"
+              class="btn btn-action right"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+      );
+      document.getElementById("universe").appendChild(dom);
+      document.getElementById(`action-confirm-alert-${id}`).addEventListener("click", () => {
+        destroyAlert(id);
+        callback();
+      });
+      document.getElementById(`action-cancel-alert-${id}`).addEventListener("click", () => {
+        destroyAlert(id);
+      });
+    } else {
+      const dom = htmlElement(
+        "div",
+        `
+      <div id=${id} class="alert">
+        <div class="alert-body">
+          <div class="alert-message">
+            ${message}
+          </div>
+          <div class="flex">
+            <button
+              id="action-close-alert-${id}"
+              class="btn btn-action right"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+      );
+      document.getElementById("universe").appendChild(dom);
+      document.getElementById(`action-close-alert-${id}`).addEventListener("click", () => destroyAlert(id));
+      document.getElementById(id).addEventListener("click", (e) => {
+        if (e.target.id === id) destroyAlert(id);
+      });
+    }
+  };
+  var destroyAlert = (id) => {
+    document.getElementById(id)?.remove();
+  };
+
   // app/round.ts
   var determineNextRound = (history) => {
     const activeParticipants = getActiveParticipants();
@@ -966,14 +1061,14 @@ h2 {
     const activeParticipants = getActiveParticipants();
     const nextRoundNumber = history.length + 1;
     if (nextRoundNumber > activeParticipants.length) {
-      return `
+      createAlert(`
       Warnung: Es wird versucht, Runde ${nextRoundNumber} zu erstellen,
       aber es gibt nur ${activeParticipants.length} aktive Teilnehmer:innen.
 
       Die Anzahl der Runden kann die Anzahl der Teilnehmer:innen nicht
       \xFCberschreiten, da sonst keine g\xFCltigen Paarungen mehr m\xF6glich sind (weil
       keine zwei Spieler:innen zweimal zusammen spielen sollen).
-    `;
+    `);
       return;
     }
     const newHistory = [...history, determineNextRound(history)];
@@ -1138,101 +1233,6 @@ h2 {
       return thisTeamPoints > otherTeamPoints ? -1 : 1;
     });
     return teams;
-  };
-
-  // app/dom.ts
-  var readFromInputField = (id) => document.getElementById(id).value;
-  var writeToInputField = (id, value) => {
-    ;
-    document.getElementById(id).value = value;
-    return true;
-  };
-  function htmlElement(tag, html) {
-    html = html.trim();
-    const template = document.createElement("template");
-    template.innerHTML = html;
-    const result = template.content.children;
-    if (result.length !== 1) {
-      throw new Error(`Expected exactly one element, got ${result.length}`);
-    }
-    const element = result[0];
-    if (element.tagName.toLowerCase() !== tag.toLowerCase()) {
-      throw new Error(
-        `Element tag mismatch: expected ${tag}, got ${element.tagName.toLowerCase()}`
-      );
-    }
-    return element;
-  }
-
-  // app/components/alert.ts
-  var createAlert = (message, callback = null) => {
-    message = message.trim();
-    const id = randomId();
-    if (callback) {
-      const dom = htmlElement(
-        "div",
-        `
-      <div id=${id} class="alert">
-        <div class="alert-body">
-          <div class="alert-message">
-            ${message}
-          </div>
-          <div class="flex">
-            <button
-              id="action-confirm-alert-${id}"
-              class="btn btn-alert"
-            >
-              Ja
-            </button>
-            <button
-              id="action-cancel-alert-${id}"
-              class="btn btn-action right"
-            >
-              Abbrechen
-            </button>
-          </div>
-        </div>
-      </div>
-    `
-      );
-      document.getElementById("universe").appendChild(dom);
-      document.getElementById(`action-confirm-alert-${id}`).addEventListener("click", () => {
-        destroyAlert(id);
-        callback();
-      });
-      document.getElementById(`action-cancel-alert-${id}`).addEventListener("click", () => {
-        destroyAlert(id);
-      });
-    } else {
-      const dom = htmlElement(
-        "div",
-        `
-      <div id=${id} class="alert">
-        <div class="alert-body">
-          <div class="alert-message">
-            ${message}
-          </div>
-          <div class="flex">
-            <button
-              id="action-close-alert-${id}"
-              class="btn btn-action right"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      </div>
-    `
-      );
-      document.getElementById("universe").appendChild(dom);
-      document.getElementById(`action-close-alert-${id}`).addEventListener("click", () => destroyAlert(id));
-      document.getElementById(id).addEventListener("click", (e) => {
-        if (e.target.id === id) destroyAlert(id);
-      });
-    }
-  };
-  var destroyAlert = (id) => {
-    document.getElementById(id)?.remove();
   };
 
   // app/components/dataForm.ts
@@ -1591,6 +1591,22 @@ h2 {
 
   // app/components/header.ts
   var createHeader = () => {
+    const savedTournaments = load("savedTournaments") || {};
+    const hasSavedTournaments = isTruthy(Object.keys(savedTournaments));
+    const openTournamentSection = hasSavedTournaments ? `
+        <div id="open-tournament-section" class="section">
+          <div class="width-100 relative">
+            <div class="dropdown width-100">
+              <button
+                id="action-open-tournament"
+                class="btn btn-action btn-yellow width-100"
+              >
+                \xD6ffnen
+              </button>
+            </div>
+          </div>
+        </div>
+      ` : "";
     const dom = htmlElement(
       "div",
       `
@@ -1606,18 +1622,7 @@ h2 {
           </button>
         </div>
 
-        <div id="open-tournament-section" class="section">
-          <div class="width-100 relative">
-            <div class="dropdown width-100">
-              <button
-                id="action-open-tournament"
-                class="btn btn-action btn-yellow width-100"
-              >
-                \xD6ffnen
-              </button>
-            </div>
-          </div>
-        </div>
+        ${openTournamentSection}
       </div>
 
       <div class="right-group">
@@ -1648,7 +1653,10 @@ h2 {
     );
     document.getElementById("header").replaceWith(dom);
     document.getElementById("action-create-tournament").addEventListener("click", createTournament);
-    document.getElementById("action-open-tournament").addEventListener("click", createOpenDialog);
+    const openTournamentButton = document.getElementById("action-open-tournament");
+    if (openTournamentButton) {
+      openTournamentButton.addEventListener("click", createOpenDialog);
+    }
     document.getElementById("action-export-tournament").addEventListener("click", exportTournament);
     document.getElementById("action-import-tournament").addEventListener("click", openImportFileDialogue);
     document.getElementById("import-tournament-file-input").addEventListener("change", importTournament);
@@ -2112,10 +2120,7 @@ h2 {
       erase("correctingRound");
       resetNextRound();
     }
-    const errorMessage = setNextRound(history, roundCount);
-    if (typeof errorMessage === "string") {
-      createAlert(errorMessage);
-    }
+    setNextRound(history, roundCount);
     render();
   };
   var attemptReopenRound = (roundNumber) => {
@@ -2419,6 +2424,7 @@ h2 {
     }
   };
   var startTournament = () => {
+    storeTournament();
     const history = load("history") || [];
     if (tournamentHasStarted(history)) return;
     const participants = readParticipants();
@@ -2460,7 +2466,9 @@ h2 {
   var createTournament = () => {
     storeTournament();
     for (const key of STORAGE_KEYS) {
-      erase(key);
+      if (key !== "savedTournaments") {
+        erase(key);
+      }
     }
     render();
   };

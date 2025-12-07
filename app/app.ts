@@ -101,6 +101,8 @@ export const render = () => {
 }
 
 export const startTournament = () => {
+  storeTournament()
+
   const history = load('history') || []
 
   if (tournamentHasStarted(history)) return
@@ -147,7 +149,9 @@ export const startTournament = () => {
 export const createTournament = () => {
   storeTournament()
   for (const key of STORAGE_KEYS) {
-    erase(key)
+    if (key !== 'savedTournaments') {
+      erase(key)
+    }
   }
   render()
 }
