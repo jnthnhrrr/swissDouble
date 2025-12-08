@@ -5,6 +5,7 @@ export const createFooter = () => {
     'footer',
     `
     <footer id="footer">
+      Schweizer Doppel<br>
       Version <strong>1.1.1</strong>
       <br>Dieses Programm ist Open Source und kann kostenlos verwendet werden.
       <br><a href="https://github.com/jnthnhrrr/swissDouble/" target="_blank" rel="noopener noreferrer">Quellcode</a> | <a href="https://github.com/jnthnhrrr/swissDouble/blob/master/SPEZIFIKATIONEN.md" target="_blank" rel="noopener noreferrer">Spezifikationen</a> | <a href="https://github.com/jnthnhrrr/swissDouble/blob/master/LICENSE.md" target="_blank" rel="noopener noreferrer">Lizenz</a>
