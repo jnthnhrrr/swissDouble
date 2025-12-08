@@ -2268,6 +2268,134 @@ h2 {
     render();
   };
 
+  // app/components/downloadRanking.ts
+  var escapeHtml = (text) => {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  };
+  var generateRankingTableHTML = (rankingGroups, departedPlayers, rankingOrder) => {
+    let tableHTML = '<table class="result-table">';
+    const headerCells = [
+      "<th>Platz</th>",
+      "<th>Name</th>",
+      ...rankingOrder.map((param) => `<th>${escapeHtml(getParameterLabel2(param))}</th>`)
+    ];
+    tableHTML += `<tr>${headerCells.join("")}</tr>`;
+    let rank = 1;
+    let dark = true;
+    for (const group of rankingGroups) {
+      for (const row of group) {
+        const [name] = row;
+        const isDeparted = departedPlayers && departedPlayers[name] !== void 0;
+        const departedText = isDeparted ? ` (nach Runde ${departedPlayers[name]})` : "";
+        const dataCells = [
+          `<td>${rank}</td>`,
+          `<td>${escapeHtml(name)}${escapeHtml(departedText)}</td>`,
+          ...rankingOrder.map(
+            (param) => `<td>${escapeHtml(getParameterValue(row, param))}</td>`
+          )
+        ];
+        tableHTML += `<tr class="${dark ? "dark" : "bright"} ${isDeparted ? "departed" : ""}">${dataCells.join("")}</tr>`;
+      }
+      dark = !dark;
+      rank += group.length;
+    }
+    tableHTML += "</table>";
+    return tableHTML;
+  };
+  var generateDownloadHTML = (title, rankingGroups, departedPlayers, rankingOrder) => {
+    const tableHTML = generateRankingTableHTML(
+      rankingGroups,
+      departedPlayers,
+      rankingOrder
+    );
+    return `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endstand - ${escapeHtml(title)}</title>
+  <style>
+    body {
+      max-width: 900px;
+      margin: auto;
+      font-family: sans-serif;
+      font-size: 20px;
+      padding: 12px;
+    }
+
+    .flex {
+      display: flex;
+      gap: 12px;
+    }
+
+    .center {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    h1, h2 {
+      font-weight: normal;
+      margin: 0px 0px 6px 0px;
+      padding: 0;
+    }
+
+    table.result-table {
+      margin-top: 24px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table.result-table th {
+      text-align: left;
+      font-weight: bold;
+    }
+
+    table.result-table tr.dark {
+      background: #eee;
+    }
+
+    table.result-table tr.departed {
+      opacity: 0.6;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="flex">
+    <h1 class="center">${escapeHtml(title)}</h1>
+  </div>
+  <div class="flex">
+    <h2 class="center">Endstand</h2>
+  </div>
+  ${tableHTML}
+</body>
+</html>`;
+  };
+  var sanitizeFilename = (filename) => {
+    return filename.replace(/[^a-z0-9äöüÄÖÜß\s-]/gi, "").replace(/\s+/g, "_").substring(0, 100);
+  };
+  var downloadRankingHTML = (title, rankingGroups, departedPlayers, rankingOrder) => {
+    const htmlContent = generateDownloadHTML(
+      title,
+      rankingGroups,
+      departedPlayers,
+      rankingOrder
+    );
+    const sanitizedTitle = sanitizeFilename(title);
+    const filename = `Endstand_${sanitizedTitle}.html`;
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // app/components/rankingTable.ts
   var titleDom = (title) => htmlElement(
     "div",
@@ -2275,17 +2403,31 @@ h2 {
     <div class="flex"><h1 class="center">${title}</h1></div>
   `
   );
-  var headingDom = (round, tournamentIsOver) => tournamentIsOver ? htmlElement(
-    "div",
-    `<div class=flex><h2 class="center">Endstand</h2></div>`
-  ) : htmlElement(
-    "div",
-    `
+  var headingDom = (round, tournamentIsOver, onDownload) => {
+    if (tournamentIsOver) {
+      const dom = htmlElement(
+        "div",
+        `<div class=flex><h2 class="center">Endstand <a href="#" id="download-ranking" style="font-size: 0.8em; font-weight: normal; text-decoration: none; color: var(--color-action);">(Download)</a></h2></div>`
+      );
+      if (onDownload) {
+        const downloadLink = dom.querySelector("#download-ranking");
+        downloadLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          onDownload();
+        });
+      }
+      return dom;
+    } else {
+      return htmlElement(
+        "div",
+        `
       <div class=flex>
         <h2 class="center">Zwischenstand nach Runde ${round}</h2>
       </div>
     `
-  );
+      );
+    }
+  };
   var managePlayersButtonDom = () => {
     const dom = htmlElement(
       "div",
@@ -2384,9 +2526,10 @@ h2 {
     const dom = htmlElement("div", `<div id="ranking-table"></div>`);
     const tournamentFinished = tournamentHasFinished(history, roundCount);
     const showManageButton = tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount);
+    const downloadHandler = tournamentFinished ? () => downloadRankingHTML(title, groups, departedPlayers, rankingOrder) : void 0;
     const elements = [
       titleDom(title),
-      headingDom(rankedRound, tournamentFinished),
+      headingDom(rankedRound, tournamentFinished, downloadHandler),
       ...showManageButton ? [managePlayersButtonDom()] : [],
       tableDom(groups, departedPlayers, rankingOrder)
     ];

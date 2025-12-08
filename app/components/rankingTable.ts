@@ -19,6 +19,7 @@ import {
 } from '../tournament.js'
 import { calculateRanking, getRankingOrder } from '../ranking.js'
 import { roundIsOpen } from '../round.js'
+import { downloadRankingHTML } from './downloadRanking.js'
 
 const titleDom = (title: string) =>
   htmlElement(
@@ -28,20 +29,35 @@ const titleDom = (title: string) =>
   `
   )
 
-const headingDom = (round: number, tournamentIsOver: boolean) =>
-  tournamentIsOver
-    ? htmlElement(
-        'div',
-        `<div class=flex><h2 class="center">Endstand</h2></div>`
-      )
-    : htmlElement(
-        'div',
-        `
+const headingDom = (
+  round: number,
+  tournamentIsOver: boolean,
+  onDownload?: () => void
+) => {
+  if (tournamentIsOver) {
+    const dom = htmlElement(
+      'div',
+      `<div class=flex><h2 class="center">Endstand <a href="#" id="download-ranking" style="font-size: 0.8em; font-weight: normal; text-decoration: none; color: var(--color-action);">(Download)</a></h2></div>`
+    )
+    if (onDownload) {
+      const downloadLink = dom.querySelector('#download-ranking')!
+      downloadLink.addEventListener('click', (e) => {
+        e.preventDefault()
+        onDownload()
+      })
+    }
+    return dom
+  } else {
+    return htmlElement(
+      'div',
+      `
       <div class=flex>
         <h2 class="center">Zwischenstand nach Runde ${round}</h2>
       </div>
     `
-      )
+    )
+  }
+}
 
 const managePlayersButtonDom = () => {
   const dom = htmlElement(
@@ -62,7 +78,7 @@ const managePlayersButtonDom = () => {
   return dom
 }
 
-const getParameterLabel = (param: RankingParameter): string => {
+export const getParameterLabel = (param: RankingParameter): string => {
   switch (param) {
     case 'points':
       return 'Punkte'
@@ -73,7 +89,7 @@ const getParameterLabel = (param: RankingParameter): string => {
   }
 }
 
-const getParameterValue = (
+export const getParameterValue = (
   row: RankingRow,
   param: RankingParameter
 ): string => {
@@ -182,9 +198,13 @@ export const createRankingTable = (
   const showManageButton =
     tournamentHasStarted(history) && !tournamentHasFinished(history, roundCount)
 
+  const downloadHandler = tournamentFinished
+    ? () => downloadRankingHTML(title, groups, departedPlayers, rankingOrder)
+    : undefined
+
   const elements: (HTMLDivElement | HTMLTableRowElement)[] = [
     titleDom(title),
-    headingDom(rankedRound, tournamentFinished),
+    headingDom(rankedRound, tournamentFinished, downloadHandler),
     ...(showManageButton ? [managePlayersButtonDom()] : []),
     tableDom(groups, departedPlayers, rankingOrder),
   ]
