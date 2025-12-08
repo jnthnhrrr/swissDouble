@@ -52,7 +52,23 @@ export const setStoreValue = (value: any) =>
 
 export const load: Loading = (key: string, defaultValue?: any) => {
   const value = getStoreValue()[key]
-  return typeof value === 'undefined' ? defaultValue : value
+  const result = typeof value === 'undefined' ? defaultValue : value
+  
+  if (key === 'history' && result) {
+    return migrateHistory(result)
+  }
+  
+  if (key === 'savedTournaments' && result) {
+    const migrated = { ...result }
+    for (const title in migrated) {
+      if (migrated[title].history) {
+        migrated[title].history = migrateHistory(migrated[title].history)
+      }
+    }
+    return migrated
+  }
+  
+  return result
 }
 export const dump: Dumping = (key: string, value: any) => {
   let storeValue = getStoreValue()

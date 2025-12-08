@@ -204,6 +204,9 @@ export const sortTeamsByRanking = (teams: Team[], ranking: Ranking): Team[] => {
     const otherTeamBuchholz =
       rankingMap[otherTeam[0]][1] + rankingMap[otherTeam[1]][1]
     if (thisTeamPoints == otherTeamPoints) {
+      if (thisTeamBuchholz == otherTeamBuchholz) {
+        return 0
+      }
       return thisTeamBuchholz > otherTeamBuchholz ? -1 : 1
     }
     return thisTeamPoints > otherTeamPoints ? -1 : 1

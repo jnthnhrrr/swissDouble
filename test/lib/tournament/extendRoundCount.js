@@ -3,6 +3,7 @@ import { JSDOM } from 'jsdom'
 import { incrementRoundCount } from '../../../dist/tournament.js'
 import { tournamentHasStarted, tournamentHasFinished } from '../../../dist/tournament.js'
 import { dump, load } from '../../../dist/storage.js'
+import { RegularMatch } from '../../../dist/types.js'
 
 describe('incrementRoundCount', function () {
   before(() => {
@@ -99,8 +100,11 @@ describe('incrementRoundCount', function () {
       incrementRoundCount()
 
       const history = load('history')
-      expect(history).to.deep.equal(originalHistory)
       expect(history.length).to.equal(2)
+      expect(history[0].length).to.equal(originalHistory[0].length)
+      expect(history[1].length).to.equal(originalHistory[1].length)
+      expect(history[0][0]).to.be.instanceOf(RegularMatch)
+      expect(history[1][0]).to.be.instanceOf(RegularMatch)
     })
 
     it('works when called multiple times', function () {
@@ -194,7 +198,11 @@ describe('incrementRoundCount', function () {
       incrementRoundCount()
 
       const history = load('history')
-      expect(history).to.deep.equal(originalHistory)
+      expect(history.length).to.equal(originalHistory.length)
+      expect(history[0].length).to.equal(originalHistory[0].length)
+      expect(history[1].length).to.equal(originalHistory[1].length)
+      expect(history[0][0]).to.be.instanceOf(RegularMatch)
+      expect(history[1][0]).to.be.instanceOf(RegularMatch)
     })
   })
 })

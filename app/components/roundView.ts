@@ -12,7 +12,7 @@ import {
   roundIsOpen as checkRoundIsOpen,
 } from '../round.js'
 import { calculateCurrentRound, tournamentHasFinished } from '../tournament.js'
-import { load, dump, erase, migrateHistory } from '../storage.js'
+import { load, dump, erase } from '../storage.js'
 import { isTruthy } from '../utils.js'
 import { htmlElement } from '../dom.js'
 import { calculatePoints } from '../ranking.js'
@@ -243,11 +243,9 @@ const regularMatchDom = (
 
 export const createRoundView = (focusedRound: number) => {
   destroyRoundView()
-  let history = load('history')
+  const history = load('history')
 
   if (!isTruthy(history)) return
-
-  history = migrateHistory(history)
 
   const participants = load('participants')
   const roundCount = load('roundCount')
